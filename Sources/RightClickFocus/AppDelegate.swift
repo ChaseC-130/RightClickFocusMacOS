@@ -10,7 +10,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private let focusController = RightClickFocusController()
+    private let mainWindowController = MainWindowController()
+    private var refreshTimer: Timer?
     private var statusItem: NSStatusItem?
+    private var showWindowItem: NSMenuItem?
     private var enabledItem: NSMenuItem?
     private var launchAtLoginItem: NSMenuItem?
     private var permissionsItem: NSMenuItem?
@@ -60,12 +63,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        mainWindowController.delegate = self
         configureMenuBar()
         startFocusController()
+        mainWindowController.showWindow(nil)
+        startRefreshTimer()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        refreshTimer?.invalidate()
         focusController.stop()
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showMainWindow()
+        return true
     }
 
     private func configureMenuBar() {
@@ -82,6 +94,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         let menu = NSMenu()
         menu.delegate = self
+
+        let showWindowItem = NSMenuItem(
+            title: "Open RightClickFocus",
+            action: #selector(showMainWindow),
+            keyEquivalent: ""
+        )
+        showWindowItem.target = self
+        self.showWindowItem = showWindowItem
+        menu.addItem(showWindowItem)
+
+        menu.addItem(.separator())
 
         let enabledItem = NSMenuItem(
             title: "Focus on Right-Click",
@@ -158,20 +181,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(quitItem)
 
         statusItem.menu = menu
-        updateMenu()
+        updateInterface()
     }
 
     func menuWillOpen(_ menu: NSMenu) {
-        updateMenu()
+        updateInterface()
     }
 
     private func startFocusController() {
         if focusController.start() {
-            updateMenu()
+            updateInterface()
             return
         }
 
-        updateMenu()
+        updateInterface()
+    }
+
+    private func startRefreshTimer() {
+        let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.refreshStatus()
+            }
+        }
+        refreshTimer = timer
+        RunLoop.main.add(timer, forMode: .common)
+    }
+
+    private func refreshStatus() {
+        if
+            focusController.isEnabled,
+            !focusController.isEventTapRunning,
+            hasAccessibilityAccess,
+            focusController.hasInputMonitoringAccess
+        {
+            _ = focusController.start()
+        }
+
+        updateInterface()
     }
 
     private func requestAccessibilityIfNeeded() {
@@ -185,6 +231,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private var hasAccessibilityAccess: Bool {
         AXIsProcessTrusted()
+    }
+
+    private func updateInterface() {
+        updateMenu()
+        mainWindowController.update(state: currentWindowState())
     }
 
     private func updateMenu() {
@@ -215,32 +266,67 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         lastClickItem?.title = "Last Target: \(focusController.lastFocusSummary)"
     }
 
+    private func currentWindowState() -> MainWindowState {
+        MainWindowState(
+            focusOnRightClick: focusController.isEnabled,
+            launchAtLogin: LaunchAtLoginController.isEnabled,
+            accessibilityGranted: hasAccessibilityAccess,
+            inputMonitoringGranted: focusController.hasInputMonitoringAccess,
+            eventTapRunning: focusController.isEventTapRunning,
+            lastTarget: focusController.lastFocusSummary,
+            lastError: focusController.lastError,
+            needsApplicationsFolderPrompt: !isRunningFromApplicationsFolder
+        )
+    }
+
     private func updateLaunchAtLoginMenuItem() {
         launchAtLoginItem?.state = LaunchAtLoginController.isEnabled ? .on : .off
         launchAtLoginItem?.title = "Launch at Login"
     }
 
-    @objc private func toggleEnabled() {
-        focusController.isEnabled.toggle()
+    private var isRunningFromApplicationsFolder: Bool {
+        let bundleParent = Bundle.main.bundleURL
+            .standardizedFileURL
+            .deletingLastPathComponent()
+            .path
+        let userApplicationsPath = FileManager.default
+            .homeDirectoryForCurrentUser
+            .appendingPathComponent("Applications")
+            .standardizedFileURL
+            .path
 
-        if focusController.isEnabled {
+        return bundleParent == "/Applications" || bundleParent == userApplicationsPath
+    }
+
+    @objc private func toggleEnabled() {
+        setFocusOnRightClick(!focusController.isEnabled)
+    }
+
+    private func setFocusOnRightClick(_ enabled: Bool) {
+        focusController.isEnabled = enabled
+
+        if enabled {
             _ = focusController.start()
         } else {
             focusController.stop()
         }
 
-        updateMenu()
+        updateInterface()
     }
 
     @objc private func toggleLaunchAtLogin() {
+        setLaunchAtLogin(!LaunchAtLoginController.isEnabled)
+    }
+
+    private func setLaunchAtLogin(_ enabled: Bool) {
         do {
-            try LaunchAtLoginController.setEnabled(!LaunchAtLoginController.isEnabled)
+            try LaunchAtLoginController.setEnabled(enabled)
             focusController.clearLastError()
         } catch {
             focusController.setLastError("Launch at Login could not be updated: \(error.localizedDescription)")
         }
 
-        updateMenu()
+        updateInterface()
     }
 
     @objc private func requestPermissions() {
@@ -263,7 +349,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             NSWorkspace.shared.open(SettingsURL.accessibility)
         }
 
-        updateMenu()
+        updateInterface()
     }
 
     @objc private func openAccessibilitySettings() {
@@ -274,7 +360,54 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSWorkspace.shared.open(SettingsURL.inputMonitoring)
     }
 
+    @objc private func showMainWindow() {
+        mainWindowController.showWindow(nil)
+        updateInterface()
+    }
+
+    private func showCurrentAppInFinder() {
+        NSWorkspace.shared.activateFileViewerSelecting([Bundle.main.bundleURL])
+    }
+
+    private func openApplicationsFolder() {
+        NSWorkspace.shared.open(URL(fileURLWithPath: "/Applications", isDirectory: true))
+    }
+
     @objc private func quit() {
         NSApp.terminate(nil)
+    }
+}
+
+extension AppDelegate: MainWindowControllerDelegate {
+    func mainWindowController(_ controller: MainWindowController, setFocusOnRightClick enabled: Bool) {
+        setFocusOnRightClick(enabled)
+    }
+
+    func mainWindowController(_ controller: MainWindowController, setLaunchAtLogin enabled: Bool) {
+        setLaunchAtLogin(enabled)
+    }
+
+    func mainWindowControllerDidRequestPermissions(_ controller: MainWindowController) {
+        requestPermissions()
+    }
+
+    func mainWindowControllerDidOpenAccessibilitySettings(_ controller: MainWindowController) {
+        openAccessibilitySettings()
+    }
+
+    func mainWindowControllerDidOpenInputMonitoringSettings(_ controller: MainWindowController) {
+        openInputMonitoringSettings()
+    }
+
+    func mainWindowControllerDidShowCurrentAppInFinder(_ controller: MainWindowController) {
+        showCurrentAppInFinder()
+    }
+
+    func mainWindowControllerDidOpenApplicationsFolder(_ controller: MainWindowController) {
+        openApplicationsFolder()
+    }
+
+    func mainWindowControllerDidQuit(_ controller: MainWindowController) {
+        quit()
     }
 }

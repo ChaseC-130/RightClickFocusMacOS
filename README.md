@@ -43,11 +43,18 @@ To create a notarized public release, first store notary credentials locally wit
 
 ## Run
 
-Open `build/RightClickFocus.app`. It runs as a small macOS utility with a menu-bar item.
+Open `build/RightClickFocus.app`. It runs as a small macOS utility with a menu-bar
+item and a minimal status window.
 
-The menu has a `Launch at Login` toggle. Launch at Login writes a user LaunchAgent at
+The app window and menu have toggles for `Focus on Right-Click` and `Launch at
+Login`. Launch at Login writes a user LaunchAgent at
 `~/Library/LaunchAgents/com.chasecargill.RightClickFocus.plist`; if you move the
 app, toggle Launch at Login off and on again so the saved path is updated.
+
+If the app is launched outside `/Applications` or `~/Applications`, the status
+window prompts you to drag `RightClickFocus.app` into Applications and reopen it
+from there. Running from Applications keeps privacy permissions and Launch at
+Login pointed at the installed copy.
 
 You can also control Launch at Login from Terminal:
 
@@ -57,16 +64,16 @@ You can also control Launch at Login from Terminal:
 ```
 
 On first launch, macOS needs privacy permissions before global right-click capture
-and Accessibility window focusing can work. The app explicitly requests both
-permissions on startup:
+and Accessibility window focusing can work. Use `Request Permissions` in the app
+window or menu:
 
 1. Grant `RightClickFocus` permission in System Settings > Privacy & Security > Accessibility.
 2. Grant `RightClickFocus` permission in System Settings > Privacy & Security > Input Monitoring.
 3. Relaunch the app, or choose `Permissions` from the menu-bar item.
 
-The menu-bar item also has shortcuts to open both privacy panes. If macOS does
-not show the Input Monitoring prompt, use the menu shortcut to open Input
-Monitoring manually, add `RightClickFocus`, then quit and reopen the app.
+The app window and menu-bar item also have shortcuts to open both privacy panes.
+If macOS does not show the Input Monitoring prompt, open Input Monitoring
+manually, add `RightClickFocus`, then quit and reopen the app.
 
 macOS may show the Input Monitoring prompt only once for a given app identity. If
 the prompt has already been dismissed or a stale privacy entry exists, choosing
