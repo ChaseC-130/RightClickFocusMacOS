@@ -12,6 +12,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let focusController = RightClickFocusController()
     private var statusItem: NSStatusItem?
     private var enabledItem: NSMenuItem?
+    private var launchAtLoginItem: NSMenuItem?
+    private var menuBarIconItem: NSMenuItem?
     private var permissionsItem: NSMenuItem?
     private var accessibilityStatusItem: NSMenuItem?
     private var inputMonitoringStatusItem: NSMenuItem?
@@ -30,6 +32,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             Foundation.exit(0)
         }
 
+        if CommandLine.arguments.contains("--show-menu-icon") {
+            Preferences.showMenuBarIcon = true
+            Preferences.notifyChanged()
+            Foundation.exit(0)
+        }
+
+        if CommandLine.arguments.contains("--hide-menu-icon") {
+            Preferences.showMenuBarIcon = false
+            Preferences.notifyChanged()
+            Foundation.exit(0)
+        }
+
+        if CommandLine.arguments.contains("--enable-launch-at-login") {
+            do {
+                try LaunchAtLoginController.setEnabled(true)
+                print("Launch at Login enabled.")
+                Foundation.exit(0)
+            } catch {
+                fputs("Could not enable Launch at Login: \(error.localizedDescription)\n", stderr)
+                Foundation.exit(1)
+            }
+        }
+
+        if CommandLine.arguments.contains("--disable-launch-at-login") {
+            do {
+                try LaunchAtLoginController.setEnabled(false)
+                print("Launch at Login disabled.")
+                Foundation.exit(0)
+            } catch {
+                fputs("Could not disable Launch at Login: \(error.localizedDescription)\n", stderr)
+                Foundation.exit(1)
+            }
+        }
+
         let app = NSApplication.shared
         let delegate = AppDelegate()
         app.delegate = delegate
@@ -38,12 +74,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        configureMenuBar()
+        DistributedNotificationCenter.default().addObserver(
+            self,
+            selector: #selector(preferencesChanged),
+            name: Preferences.changedNotification,
+            object: nil
+        )
+        applyMenuBarPreference()
         startFocusController()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         focusController.stop()
+        DistributedNotificationCenter.default().removeObserver(self)
+    }
+
+    private func applyMenuBarPreference() {
+        if Preferences.showMenuBarIcon {
+            if statusItem == nil {
+                configureMenuBar()
+            } else {
+                updateMenu()
+            }
+        } else {
+            removeMenuBarIcon()
+        }
     }
 
     private func configureMenuBar() {
@@ -70,6 +125,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         enabledItem.state = .on
         self.enabledItem = enabledItem
         menu.addItem(enabledItem)
+
+        let launchAtLoginItem = NSMenuItem(
+            title: "Launch at Login",
+            action: #selector(toggleLaunchAtLogin),
+            keyEquivalent: ""
+        )
+        launchAtLoginItem.target = self
+        self.launchAtLoginItem = launchAtLoginItem
+        menu.addItem(launchAtLoginItem)
+
+        let menuBarIconItem = NSMenuItem(
+            title: "Show Menu Bar Icon",
+            action: #selector(toggleMenuBarIcon),
+            keyEquivalent: ""
+        )
+        menuBarIconItem.target = self
+        self.menuBarIconItem = menuBarIconItem
+        menu.addItem(menuBarIconItem)
+
+        menu.addItem(.separator())
 
         let permissionsItem = NSMenuItem(
             title: "Permissions: Checking...",
@@ -128,6 +203,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         updateMenu()
     }
 
+    private func removeMenuBarIcon() {
+        if let statusItem {
+            NSStatusBar.system.removeStatusItem(statusItem)
+        }
+
+        statusItem = nil
+        enabledItem = nil
+        launchAtLoginItem = nil
+        menuBarIconItem = nil
+        permissionsItem = nil
+        accessibilityStatusItem = nil
+        inputMonitoringStatusItem = nil
+        eventTapStatusItem = nil
+        lastClickItem = nil
+    }
+
     func menuWillOpen(_ menu: NSMenu) {
         updateMenu()
     }
@@ -156,6 +247,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func updateMenu() {
         enabledItem?.state = focusController.isEnabled ? .on : .off
+        updateLaunchAtLoginMenuItem()
+        menuBarIconItem?.state = Preferences.showMenuBarIcon ? .on : .off
         accessibilityStatusItem?.title = "Accessibility: \(hasAccessibilityAccess ? "Granted" : "Missing")"
         inputMonitoringStatusItem?.title = "Input Monitoring: \(focusController.hasInputMonitoringAccess ? "Granted" : "Missing")"
         eventTapStatusItem?.title = "Event Tap: \(focusController.isEventTapRunning ? "Running" : "Stopped")"
@@ -181,6 +274,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         lastClickItem?.title = "Last Target: \(focusController.lastFocusSummary)"
     }
 
+    private func updateLaunchAtLoginMenuItem() {
+        launchAtLoginItem?.state = LaunchAtLoginController.isEnabled ? .on : .off
+        launchAtLoginItem?.title = "Launch at Login"
+    }
+
     @objc private func toggleEnabled() {
         focusController.isEnabled.toggle()
 
@@ -191,6 +289,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         updateMenu()
+    }
+
+    @objc private func toggleLaunchAtLogin() {
+        do {
+            try LaunchAtLoginController.setEnabled(!LaunchAtLoginController.isEnabled)
+            focusController.clearLastError()
+        } catch {
+            focusController.setLastError("Launch at Login could not be updated: \(error.localizedDescription)")
+        }
+
+        updateMenu()
+    }
+
+    @objc private func toggleMenuBarIcon() {
+        Preferences.showMenuBarIcon.toggle()
+        Preferences.notifyChanged()
+        applyMenuBarPreference()
     }
 
     @objc private func requestPermissions() {
@@ -226,5 +341,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func quit() {
         NSApp.terminate(nil)
+    }
+
+    @objc private func preferencesChanged() {
+        applyMenuBarPreference()
     }
 }

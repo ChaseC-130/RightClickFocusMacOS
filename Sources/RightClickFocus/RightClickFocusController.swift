@@ -30,6 +30,14 @@ final class RightClickFocusController {
         return didGrantAccess
     }
 
+    func setLastError(_ message: String) {
+        lastError = message
+    }
+
+    func clearLastError() {
+        lastError = nil
+    }
+
     func start() -> Bool {
         guard isEnabled else { return false }
 

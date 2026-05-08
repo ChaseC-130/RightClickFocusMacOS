@@ -28,6 +28,30 @@ to ad-hoc signing, which may require granting permissions again after rebuilding
 
 Open `build/RightClickFocus.app`. It runs as a menu-bar app with no Dock icon.
 
+The menu has toggles for `Launch at Login` and `Show Menu Bar Icon`. Launch at
+Login writes a user LaunchAgent at
+`~/Library/LaunchAgents/com.chasecargill.RightClickFocus.plist`; if you move the
+app, toggle Launch at Login off and on again so the saved path is updated.
+
+You can also control Launch at Login from Terminal:
+
+```sh
+./scripts/enable-launch-at-login.sh
+./scripts/disable-launch-at-login.sh
+```
+
+If you hide the menu bar icon and want it back later, run:
+
+```sh
+./scripts/show-menu-icon.sh
+```
+
+You can also hide it from Terminal:
+
+```sh
+./scripts/hide-menu-icon.sh
+```
+
 On first launch, macOS needs privacy permissions before global right-click capture
 and Accessibility window focusing can work. The app explicitly requests both
 permissions on startup:

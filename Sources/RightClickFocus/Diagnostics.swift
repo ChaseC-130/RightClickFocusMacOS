@@ -40,6 +40,8 @@ enum Diagnostics {
             "Accessibility trusted: \(AXIsProcessTrusted() ? "yes" : "no")",
             "Input Monitoring preflight: \(CGPreflightListenEventAccess() ? "yes" : "no")",
             "Right-click event tap creatable: \(canCreateRightClickEventTap() ? "yes" : "no")",
+            "Launch at Login: \(LaunchAtLoginController.statusDescription)",
+            "Menu bar icon preference: \(Preferences.showMenuBarIcon ? "shown" : "hidden")",
             "Frontmost app: \(NSWorkspace.shared.frontmostApplication?.localizedName ?? "unknown")"
         ].joined(separator: "\n")
     }
