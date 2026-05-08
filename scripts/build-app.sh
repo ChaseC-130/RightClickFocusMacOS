@@ -21,12 +21,20 @@ chmod +x "$MACOS_DIR/$APP_NAME"
 SIGN_IDENTITY="${CODESIGN_IDENTITY:-}"
 
 if [[ -z "$SIGN_IDENTITY" ]]; then
+  SIGN_IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null | awk -F '"' '/Developer ID Application/ { print $2; exit }')"
+fi
+
+if [[ -z "$SIGN_IDENTITY" ]]; then
   SIGN_IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null | awk -F '"' '/Apple Development/ { print $2; exit }')"
 fi
 
 if [[ -n "$SIGN_IDENTITY" ]]; then
   echo "Signing with $SIGN_IDENTITY"
-  codesign --force --deep --sign "$SIGN_IDENTITY" "$APP_DIR"
+  if [[ "$SIGN_IDENTITY" == Developer\ ID\ Application:* ]]; then
+    codesign --force --deep --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP_DIR"
+  else
+    codesign --force --deep --sign "$SIGN_IDENTITY" "$APP_DIR"
+  fi
 else
   echo "Signing ad-hoc because no code-signing identity was found"
   codesign --force --deep --sign - "$APP_DIR"

@@ -28,6 +28,17 @@ If an Apple Development signing identity is available, the build script uses it
 so macOS privacy grants remain stable across rebuilds. Otherwise it falls back
 to ad-hoc signing, which may require granting permissions again after rebuilding.
 
+If a Developer ID Application identity is available, the build script prefers it
+and signs with hardened runtime plus a trusted timestamp for public distribution.
+
+To create a notarized public release, first store notary credentials locally with
+`xcrun notarytool store-credentials`, then run:
+
+```sh
+./scripts/notarize-release.sh
+./scripts/publish-release.sh
+```
+
 ## Run
 
 Open `build/RightClickFocus.app`. It runs as a menu-bar app with no Dock icon.
@@ -103,18 +114,15 @@ app name macOS reported under the right-click.
 
 ## GitHub Releases
 
-Pushing a version tag such as `v0.1.0` runs the release workflow. The workflow
-builds the app on macOS, packages `RightClickFocus.app` into a zip, writes a
-SHA-256 checksum, and publishes both files to the GitHub release for that tag.
+Use the local notarized release scripts for public downloads:
 
 ```sh
-git tag v0.1.0
-git push origin v0.1.0
+./scripts/notarize-release.sh 0.1.1
+./scripts/publish-release.sh 0.1.1
 ```
 
-Release workflow builds are ad-hoc signed unless signing credentials are added
-to GitHub Actions. For the smoothest public distribution, use a Developer ID
-Application certificate and notarize the app before release.
+The GitHub Actions release workflow remains available for manual ad-hoc test
+builds, but public releases should be Developer ID signed and notarized locally.
 
 ## Notes
 

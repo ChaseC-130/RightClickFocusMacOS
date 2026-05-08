@@ -1,9 +1,12 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version, for example 0.1.1"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -20,8 +23,8 @@ jobs:
       - name: Resolve version
         id: version
         run: |
-          TAG_NAME="${GITHUB_REF_NAME}"
-          VERSION="${TAG_NAME#v}"
+          VERSION="${{ inputs.version }}"
+          TAG_NAME="v${VERSION#v}"
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
@@ -36,7 +39,7 @@ jobs:
 
           On first launch, grant Accessibility and Input Monitoring permissions in System Settings.
 
-          This build is ad-hoc signed by GitHub Actions unless Developer ID signing credentials are configured for the workflow.
+          This build is ad-hoc signed by GitHub Actions. Use the local notarized release scripts for public distribution.
           NOTES
 
       - name: Publish GitHub release
