@@ -353,11 +353,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func openAccessibilitySettings() {
+        requestAccessibilityIfNeeded()
         NSWorkspace.shared.open(SettingsURL.accessibility)
+        updateInterface()
     }
 
     @objc private func openInputMonitoringSettings() {
+        if !focusController.hasInputMonitoringAccess {
+            _ = focusController.requestInputMonitoringAccess()
+        }
+
         NSWorkspace.shared.open(SettingsURL.inputMonitoring)
+        updateInterface()
     }
 
     @objc private func showMainWindow() {

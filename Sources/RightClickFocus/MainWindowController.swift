@@ -263,21 +263,33 @@ final class MainWindowController: NSWindowController {
             action: #selector(openInputMonitoringSettings)
         )
 
-        let buttonStack = NSStackView(views: [permissionsButton, accessibilityButton, inputMonitoringButton])
-        buttonStack.orientation = .horizontal
-        buttonStack.alignment = .centerY
-        buttonStack.spacing = 8
+        let revealAppButton = makeButton(
+            title: "Reveal App",
+            symbolName: "magnifyingglass",
+            action: #selector(showCurrentAppInFinder)
+        )
+
+        let requestButtonStack = NSStackView(views: [permissionsButton])
+        requestButtonStack.orientation = .horizontal
+        requestButtonStack.alignment = .centerY
+
+        let settingsButtonStack = NSStackView(views: [accessibilityButton, inputMonitoringButton, revealAppButton])
+        settingsButtonStack.orientation = .horizontal
+        settingsButtonStack.alignment = .centerY
+        settingsButtonStack.spacing = 8
 
         let stack = NSStackView(views: [
             sectionLabel("Permissions"),
             makeStatusRow(title: "Accessibility", value: accessibilityValue),
             makeStatusRow(title: "Input Monitoring", value: inputMonitoringValue),
-            buttonStack,
+            requestButtonStack,
+            settingsButtonStack,
             errorLabel
         ])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 7
+        stack.detachesHiddenViews = true
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.widthAnchor.constraint(equalToConstant: 440).isActive = true
 
@@ -363,7 +375,7 @@ final class MainWindowController: NSWindowController {
 
         let targetContentSize = NSSize(
             width: 480,
-            height: showingApplicationsPrompt ? 520 : 400
+            height: showingApplicationsPrompt ? 560 : 440
         )
         let targetFrameSize = window.frameRect(forContentRect: NSRect(origin: .zero, size: targetContentSize)).size
         var frame = window.frame

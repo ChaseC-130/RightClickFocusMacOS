@@ -29,11 +29,16 @@ cleanup() {
     hdiutil detach "$DEVICE" -quiet || true
   fi
 
+  if [[ -n "$MOUNT_DIR" ]]; then
+    rm -rf "$MOUNT_DIR"
+  fi
+
   rm -f "$TMP_DMG"
 }
 trap cleanup EXIT
 
 rm -f "$DMG_PATH" "$CHECKSUM_PATH" "$TMP_DMG"
+MOUNT_DIR="$(mktemp -d "$ROOT/build/dmg-mount.XXXXXX")"
 
 hdiutil create \
   -size 64m \
@@ -42,9 +47,8 @@ hdiutil create \
   -ov \
   "$TMP_DMG" >/dev/null
 
-ATTACH_OUTPUT="$(hdiutil attach "$TMP_DMG" -readwrite -noverify -noautoopen)"
+ATTACH_OUTPUT="$(hdiutil attach "$TMP_DMG" -readwrite -noverify -noautoopen -mountpoint "$MOUNT_DIR")"
 DEVICE="$(printf '%s\n' "$ATTACH_OUTPUT" | awk '/Apple_HFS/ { print $1; exit }')"
-MOUNT_DIR="$(printf '%s\n' "$ATTACH_OUTPUT" | awk '/Apple_HFS/ { print $3; exit }')"
 
 if [[ -z "$DEVICE" ]]; then
   echo "Could not determine mounted DMG device." >&2

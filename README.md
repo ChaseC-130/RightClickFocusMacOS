@@ -77,7 +77,9 @@ window or menu:
 
 The app window and menu-bar item also have shortcuts to open both privacy panes.
 If macOS does not show the Input Monitoring prompt, open Input Monitoring
-manually, add `RightClickFocus`, then quit and reopen the app.
+manually, click `+`, add `RightClickFocus.app` from Applications, then quit and
+reopen the app. The app window has a `Reveal App` button to select the current
+bundle in Finder for this manual step.
 
 macOS may show the Input Monitoring prompt only once for a given app identity. If
 the prompt has already been dismissed or a stale privacy entry exists, choosing
