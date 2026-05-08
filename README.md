@@ -87,7 +87,9 @@ the prompt has already been dismissed or a stale privacy entry exists, choosing
 showing another prompt.
 
 If Settings shows `RightClickFocus` as enabled but the app still reports missing
-permissions, reset stale TCC entries and grant permissions to the current bundle:
+permissions, use `Reset Permissions` in the app window, then quit and reopen the
+app. You can also reset stale TCC entries from Terminal and grant permissions to
+the current bundle:
 
 ```sh
 ./scripts/reset-permissions.sh

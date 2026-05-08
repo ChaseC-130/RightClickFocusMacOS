@@ -380,6 +380,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSWorkspace.shared.open(URL(fileURLWithPath: "/Applications", isDirectory: true))
     }
 
+    private func resetPrivacyPermissions() {
+        do {
+            try resetPrivacyPermissions(for: Bundle.main.bundleIdentifier ?? "com.chasecargill.RightClickFocus")
+            try resetPrivacyPermissions(for: "local.codex.RightClickFocus")
+            focusController.stop()
+            focusController.setLastError("Permissions reset. Quit and reopen RightClickFocus, then grant Accessibility and Input Monitoring again.")
+            NSWorkspace.shared.open(SettingsURL.accessibility)
+        } catch {
+            focusController.setLastError("Permissions could not be reset: \(error.localizedDescription)")
+        }
+
+        updateInterface()
+    }
+
+    private func resetPrivacyPermissions(for bundleID: String) throws {
+        try runTCCUtil(arguments: ["reset", "Accessibility", bundleID])
+        try runTCCUtil(arguments: ["reset", "ListenEvent", bundleID])
+    }
+
+    private func runTCCUtil(arguments: [String]) throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/tccutil")
+        process.arguments = arguments
+        process.standardOutput = Pipe()
+        process.standardError = Pipe()
+
+        try process.run()
+        process.waitUntilExit()
+    }
+
     @objc private func quit() {
         NSApp.terminate(nil)
     }
@@ -412,6 +442,10 @@ extension AppDelegate: MainWindowControllerDelegate {
 
     func mainWindowControllerDidOpenApplicationsFolder(_ controller: MainWindowController) {
         openApplicationsFolder()
+    }
+
+    func mainWindowControllerDidResetPermissions(_ controller: MainWindowController) {
+        resetPrivacyPermissions()
     }
 
     func mainWindowControllerDidQuit(_ controller: MainWindowController) {

@@ -20,6 +20,7 @@ protocol MainWindowControllerDelegate: AnyObject {
     func mainWindowControllerDidOpenInputMonitoringSettings(_ controller: MainWindowController)
     func mainWindowControllerDidShowCurrentAppInFinder(_ controller: MainWindowController)
     func mainWindowControllerDidOpenApplicationsFolder(_ controller: MainWindowController)
+    func mainWindowControllerDidResetPermissions(_ controller: MainWindowController)
     func mainWindowControllerDidQuit(_ controller: MainWindowController)
 }
 
@@ -269,6 +270,12 @@ final class MainWindowController: NSWindowController {
             action: #selector(showCurrentAppInFinder)
         )
 
+        let resetPermissionsButton = makeButton(
+            title: "Reset Permissions",
+            symbolName: "arrow.counterclockwise",
+            action: #selector(resetPermissions)
+        )
+
         let requestButtonStack = NSStackView(views: [permissionsButton])
         requestButtonStack.orientation = .horizontal
         requestButtonStack.alignment = .centerY
@@ -278,12 +285,17 @@ final class MainWindowController: NSWindowController {
         settingsButtonStack.alignment = .centerY
         settingsButtonStack.spacing = 8
 
+        let resetButtonStack = NSStackView(views: [resetPermissionsButton])
+        resetButtonStack.orientation = .horizontal
+        resetButtonStack.alignment = .centerY
+
         let stack = NSStackView(views: [
             sectionLabel("Permissions"),
             makeStatusRow(title: "Accessibility", value: accessibilityValue),
             makeStatusRow(title: "Input Monitoring", value: inputMonitoringValue),
             requestButtonStack,
             settingsButtonStack,
+            resetButtonStack,
             errorLabel
         ])
         stack.orientation = .vertical
@@ -375,7 +387,7 @@ final class MainWindowController: NSWindowController {
 
         let targetContentSize = NSSize(
             width: 480,
-            height: showingApplicationsPrompt ? 560 : 440
+            height: showingApplicationsPrompt ? 596 : 476
         )
         let targetFrameSize = window.frameRect(forContentRect: NSRect(origin: .zero, size: targetContentSize)).size
         var frame = window.frame
@@ -427,6 +439,10 @@ final class MainWindowController: NSWindowController {
 
     @objc private func openApplicationsFolder() {
         delegate?.mainWindowControllerDidOpenApplicationsFolder(self)
+    }
+
+    @objc private func resetPermissions() {
+        delegate?.mainWindowControllerDidResetPermissions(self)
     }
 
     @objc private func quit() {
