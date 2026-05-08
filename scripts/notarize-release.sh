@@ -8,7 +8,7 @@ NOTARY_PROFILE="${NOTARY_PROFILE:-RightClickFocus-notary}"
 ZIP_PATH="$ROOT/build/$APP_NAME-$VERSION.zip"
 CHECKSUM_PATH="$ZIP_PATH.sha256"
 
-"$ROOT/scripts/package-release.sh" "$VERSION"
+RIGHTCLICKFOCUS_OFFICIAL_RELEASE=1 "$ROOT/scripts/package-release.sh" "$VERSION"
 
 echo "Submitting $ZIP_PATH to Apple notary service with profile $NOTARY_PROFILE"
 xcrun notarytool submit "$ZIP_PATH" \

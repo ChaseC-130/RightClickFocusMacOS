@@ -24,12 +24,14 @@ To create a distributable zip:
 
 The release zip and checksum are written to `build/`.
 
-If an Apple Development signing identity is available, the build script uses it
-so macOS privacy grants remain stable across rebuilds. Otherwise it falls back
-to ad-hoc signing, which may require granting permissions again after rebuilding.
+Local builds are ad-hoc signed by default so anyone can compile the project
+without Apple Developer credentials. Ad-hoc builds may require granting macOS
+privacy permissions again after rebuilding.
 
-If a Developer ID Application identity is available, the build script prefers it
-and signs with hardened runtime plus a trusted timestamp for public distribution.
+Official release builds are signed separately with the maintainer's Developer ID
+Application certificate and notarized before upload. Private certificates,
+profiles, notary credentials, and Apple account secrets are not stored in this
+repository.
 
 To create a notarized public release, first store notary credentials locally with
 `xcrun notarytool store-credentials`, then run:

@@ -20,12 +20,8 @@ chmod +x "$MACOS_DIR/$APP_NAME"
 
 SIGN_IDENTITY="${CODESIGN_IDENTITY:-}"
 
-if [[ -z "$SIGN_IDENTITY" ]]; then
+if [[ -z "$SIGN_IDENTITY" && "${RIGHTCLICKFOCUS_OFFICIAL_RELEASE:-}" == "1" ]]; then
   SIGN_IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null | awk -F '"' '/Developer ID Application/ { print $2; exit }')"
-fi
-
-if [[ -z "$SIGN_IDENTITY" ]]; then
-  SIGN_IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null | awk -F '"' '/Apple Development/ { print $2; exit }')"
 fi
 
 if [[ -n "$SIGN_IDENTITY" ]]; then
@@ -36,7 +32,7 @@ if [[ -n "$SIGN_IDENTITY" ]]; then
     codesign --force --deep --sign "$SIGN_IDENTITY" "$APP_DIR"
   fi
 else
-  echo "Signing ad-hoc because no code-signing identity was found"
+  echo "Signing ad-hoc. Set CODESIGN_IDENTITY or RIGHTCLICKFOCUS_OFFICIAL_RELEASE=1 for certificate signing."
   codesign --force --deep --sign - "$APP_DIR"
 fi
 
