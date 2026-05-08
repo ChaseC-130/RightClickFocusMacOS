@@ -241,9 +241,7 @@ final class RightClickFocusController {
         )
 
         let targetName = target.ownerName ?? "unknown app"
-        let title = target.windowName ?? "untitled"
-        let carbonSummary = carbonActivationResult.map(String.init) ?? "n/a"
-        lastFocusSummary = "\(targetName) / \(title) / AX \(target.axWindow == nil ? "no" : "yes") / carbon \(carbonSummary) / activate \(appActivationResult)"
+        lastFocusSummary = targetName
     }
 
     private func activateAsUserInitiated(pid: pid_t) -> OSStatus? {

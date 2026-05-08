@@ -70,10 +70,9 @@ can be attributed differently by macOS privacy controls.
 `Right-click event tap creatable` should also say `yes`; if it says `no`, the app
 cannot even create the listener.
 
-After a test click, open the menu-bar item and check `Last Target`. If it says
-`RuneLite`, the app detected the right window and the remaining problem is macOS
-activation/raising. If it says `Google Chrome`, the click point is still landing
-on Chrome according to the system window stack.
+After a test click, open the menu-bar item and check `Last Target`. It shows the
+app name macOS reported under the right-click, such as `RuneLite` or
+`Google Chrome`.
 
 ## Notes
 
