@@ -2,3 +2,17 @@
 build/
 .DS_Store
 Package.resolved
+
+# Code-signing and Apple account artifacts. The app can be open sourced, but
+# private signing material should never be committed.
+*.p12
+*.cer
+*.certSigningRequest
+*.csr
+*.der
+*.key
+*.pem
+*.mobileprovision
+*.provisionprofile
+*.xcarchive
+ExportOptions.plist
