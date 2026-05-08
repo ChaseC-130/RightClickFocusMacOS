@@ -34,6 +34,19 @@ ditto -c -k --keepParent "$ROOT/build/$APP_NAME.app" "$ZIP_PATH"
 
 "$ROOT/scripts/package-dmg.sh" "$VERSION" --no-build
 
+DMG_SIGN_IDENTITY="${CODESIGN_IDENTITY:-}"
+if [[ -z "$DMG_SIGN_IDENTITY" ]]; then
+  DMG_SIGN_IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null | awk -F '"' '/Developer ID Application/ { print $2; exit }')"
+fi
+
+if [[ -z "$DMG_SIGN_IDENTITY" ]]; then
+  echo "Could not find a Developer ID Application identity for signing the DMG." >&2
+  exit 1
+fi
+
+echo "Signing DMG with $DMG_SIGN_IDENTITY"
+codesign --force --timestamp --sign "$DMG_SIGN_IDENTITY" "$DMG_PATH"
+
 echo "Submitting $DMG_PATH to Apple notary service with profile $NOTARY_PROFILE"
 xcrun notarytool submit "$DMG_PATH" \
   --keychain-profile "$NOTARY_PROFILE" \
