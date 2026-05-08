@@ -39,7 +39,9 @@ enum LaunchAtLoginController {
             "Label": label,
             "ProgramArguments": [
                 "/usr/bin/open",
-                Bundle.main.bundleURL.path
+                Bundle.main.bundleURL.path,
+                "--args",
+                "--launch-at-login"
             ],
             "RunAtLoad": true,
             "LimitLoadToSessionType": "Aqua"

@@ -12,6 +12,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let focusController = RightClickFocusController()
     private let appearancePreferences = AppAppearancePreferences()
     private let mainWindowController = MainWindowController()
+    private let launchedAtLogin = CommandLine.arguments.contains("--launch-at-login")
+    private var loginLaunchReopenSuppressionUntil: Date?
     private var refreshTimer: Timer?
     private var statusItem: NSStatusItem?
     private var showWindowItem: NSMenuItem?
@@ -68,6 +70,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         mainWindowController.delegate = self
+        if launchedAtLogin {
+            loginLaunchReopenSuppressionUntil = Date().addingTimeInterval(8)
+        }
         updateMenuBarVisibility()
         startFocusController()
         startRefreshTimer()
@@ -79,6 +84,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if
+            let loginLaunchReopenSuppressionUntil,
+            Date() < loginLaunchReopenSuppressionUntil,
+            !flag
+        {
+            return false
+        }
+
+        self.loginLaunchReopenSuppressionUntil = nil
         showMainWindow()
         return true
     }

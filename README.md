@@ -55,7 +55,8 @@ Login`, plus appearance toggles for showing the Dock icon and menu-bar item. At
 least one of the Dock icon or menu-bar item must stay visible so you can reopen
 the app window. Launch at Login writes a user LaunchAgent at
 `~/Library/LaunchAgents/com.chasecargill.RightClickFocus.plist`; if you move the
-app, toggle Launch at Login off and on again so the saved path is updated.
+app, toggle Launch at Login off and on again so the saved path is updated. Login
+launches run quietly and do not open the status window by default.
 
 If the app is launched outside `/Applications` or `~/Applications`, the status
 window prompts you to use the DMG installer window or otherwise move
