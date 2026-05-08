@@ -83,6 +83,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         focusController.stop()
     }
 
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if
             let loginLaunchReopenSuppressionUntil,
