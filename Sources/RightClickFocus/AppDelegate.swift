@@ -16,6 +16,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var lastClickItem: NSMenuItem?
 
     static func main() {
+        if CommandLine.arguments.contains("--diagnose") {
+            Diagnostics.run()
+            Foundation.exit(0)
+        }
+
         let app = NSApplication.shared
         let delegate = AppDelegate()
         app.delegate = delegate

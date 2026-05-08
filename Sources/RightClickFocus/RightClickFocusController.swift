@@ -1,5 +1,6 @@
 import AppKit
 import ApplicationServices
+import CarbonActivationShim
 import OSLog
 
 final class RightClickFocusController {
@@ -220,7 +221,8 @@ final class RightClickFocusController {
             kAXFrontmostAttribute as CFString,
             kCFBooleanTrue
         )
-        let appActivationResult = app.activate(options: [])
+        let carbonActivationResult = activateAsUserInitiated(pid: target.pid)
+        let appActivationResult = app.activate(options: [.activateAllWindows])
 
         if let axWindow = target.axWindow {
             focus(axWindow: axWindow, appElement: appElement)
@@ -232,13 +234,20 @@ final class RightClickFocusController {
             title=\(target.windowName ?? "untitled", privacy: .public) \
             pid=\(target.pid) windowID=\(target.cgWindowID ?? 0) \
             axWindow=\(target.axWindow == nil ? "no" : "yes", privacy: .public) \
-            axFrontmost=\(axFrontmostResult.rawValue) appActivate=\(appActivationResult)
+            axFrontmost=\(axFrontmostResult.rawValue) \
+            carbonActivate=\(carbonActivationResult ?? Int32.min) \
+            appActivate=\(appActivationResult)
             """
         )
 
         let targetName = target.ownerName ?? "unknown app"
         let title = target.windowName ?? "untitled"
-        lastFocusSummary = "\(targetName) / \(title) / AX \(target.axWindow == nil ? "no" : "yes") / activate \(appActivationResult)"
+        let carbonSummary = carbonActivationResult.map(String.init) ?? "n/a"
+        lastFocusSummary = "\(targetName) / \(title) / AX \(target.axWindow == nil ? "no" : "yes") / carbon \(carbonSummary) / activate \(appActivationResult)"
+    }
+
+    private func activateAsUserInitiated(pid: pid_t) -> OSStatus? {
+        RightClickFocusActivateProcessForPID(pid)
     }
 
     private func focus(axWindow: AXUIElement, appElement: AXUIElement) {

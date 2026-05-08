@@ -11,11 +11,14 @@ let package = Package(
         .executable(name: "RightClickFocus", targets: ["RightClickFocus"])
     ],
     targets: [
+        .target(name: "CarbonActivationShim"),
         .executableTarget(
             name: "RightClickFocus",
+            dependencies: ["CarbonActivationShim"],
             linkerSettings: [
                 .linkedFramework("AppKit"),
-                .linkedFramework("ApplicationServices")
+                .linkedFramework("ApplicationServices"),
+                .linkedFramework("Security")
             ]
         )
     ]

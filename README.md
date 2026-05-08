@@ -36,6 +36,18 @@ The menu-bar item also has shortcuts to open both privacy panes. If macOS does
 not show the Input Monitoring prompt, use the menu shortcut to open Input
 Monitoring manually, add `RightClickFocus`, then quit and reopen the app.
 
+## Diagnose Permissions
+
+To audit what macOS has granted to this exact app bundle:
+
+```sh
+./scripts/diagnose.sh
+```
+
+`Accessibility trusted` and `Input Monitoring preflight` should both say `yes`.
+`Right-click event tap creatable` should also say `yes`; if it says `no`, the app
+cannot currently receive global right-click events.
+
 After a test click, open the menu-bar item and check `Last Target`. If it says
 `RuneLite`, the app detected the right window and the remaining problem is macOS
 activation/raising. If it says `Google Chrome`, the click point is still landing
