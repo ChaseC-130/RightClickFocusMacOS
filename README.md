@@ -1,12 +1,8 @@
 # RightClickFocus
 
-RightClickFocus is a tiny macOS menu-bar utility for macOS Tahoe-style desktop use:
-when you right-click a background window, it tries to focus and raise that window
+RightClickFocus is a tiny macOS menu-bar utility for macOS Tahoe-style desktop use.
+When you right-click a background window, it tries to focus and raise that window
 before the contextual menu opens.
-
-It is especially useful for RuneLite/OSRS players who keep
-RuneLite behind another active window, such as Chrome, and want a right-click on
-the game window to bring RuneLite forward before opening the in-game menu.
 
 ## Build
 
@@ -19,6 +15,14 @@ The packaged app is written to:
 ```text
 build/RightClickFocus.app
 ```
+
+To create a distributable zip:
+
+```sh
+./scripts/package-release.sh
+```
+
+The release zip and checksum are written to `build/`.
 
 If an Apple Development signing identity is available, the build script uses it
 so macOS privacy grants remain stable across rebuilds. Otherwise it falls back
@@ -95,8 +99,22 @@ can be attributed differently by macOS privacy controls.
 cannot even create the listener.
 
 After a test click, open the menu-bar item and check `Last Target`. It shows the
-app name macOS reported under the right-click, such as `RuneLite` or
-`Google Chrome`.
+app name macOS reported under the right-click.
+
+## GitHub Releases
+
+Pushing a version tag such as `v0.1.0` runs the release workflow. The workflow
+builds the app on macOS, packages `RightClickFocus.app` into a zip, writes a
+SHA-256 checksum, and publishes both files to the GitHub release for that tag.
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Release workflow builds are ad-hoc signed unless signing credentials are added
+to GitHub Actions. For the smoothest public distribution, use a Developer ID
+Application certificate and notarize the app before release.
 
 ## Notes
 
