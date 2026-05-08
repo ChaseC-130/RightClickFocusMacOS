@@ -11,7 +11,15 @@ if [[ ! -x "$EXECUTABLE" ]]; then
 fi
 
 rm -f "$REPORT"
-/usr/bin/open -W -n "$APP_PATH" --args --diagnose-to "$REPORT"
+/usr/bin/open -n "$APP_PATH" --args --diagnose-to "$REPORT"
+
+for _ in {1..50}; do
+  if [[ -f "$REPORT" ]]; then
+    break
+  fi
+
+  sleep 0.1
+done
 
 if [[ ! -f "$REPORT" ]]; then
   echo "No diagnostic report was written at $REPORT" >&2
