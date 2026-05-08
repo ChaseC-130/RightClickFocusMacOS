@@ -51,7 +51,9 @@ For normal installation, download the release DMG, open it, drag
 `RightClickFocus.app` to Applications, then open it from Applications.
 
 The app window and menu have toggles for `Focus on Right-Click` and `Launch at
-Login`. Launch at Login writes a user LaunchAgent at
+Login`, plus appearance toggles for showing the Dock icon and menu-bar item. At
+least one of the Dock icon or menu-bar item must stay visible so you can reopen
+the app window. Launch at Login writes a user LaunchAgent at
 `~/Library/LaunchAgents/com.chasecargill.RightClickFocus.plist`; if you move the
 app, toggle Launch at Login off and on again so the saved path is updated.
 

@@ -8,6 +8,8 @@ struct MainWindowState {
     let eventTapRunning: Bool
     let lastTarget: String
     let lastError: String?
+    let showInDock: Bool
+    let showInMenuBar: Bool
     let needsApplicationsFolderPrompt: Bool
 }
 
@@ -15,6 +17,8 @@ struct MainWindowState {
 protocol MainWindowControllerDelegate: AnyObject {
     func mainWindowController(_ controller: MainWindowController, setFocusOnRightClick enabled: Bool)
     func mainWindowController(_ controller: MainWindowController, setLaunchAtLogin enabled: Bool)
+    func mainWindowController(_ controller: MainWindowController, setShowInDock enabled: Bool)
+    func mainWindowController(_ controller: MainWindowController, setShowInMenuBar enabled: Bool)
     func mainWindowControllerDidRequestPermissions(_ controller: MainWindowController)
     func mainWindowControllerDidOpenAccessibilitySettings(_ controller: MainWindowController)
     func mainWindowControllerDidOpenInputMonitoringSettings(_ controller: MainWindowController)
@@ -32,6 +36,8 @@ final class MainWindowController: NSWindowController {
     private let applicationsPromptView = NSView()
     private let focusCheckbox = NSButton(checkboxWithTitle: "Focus on Right-Click", target: nil, action: nil)
     private let launchAtLoginCheckbox = NSButton(checkboxWithTitle: "Launch at Login", target: nil, action: nil)
+    private let showInDockCheckbox = NSButton(checkboxWithTitle: "Show in Dock", target: nil, action: nil)
+    private let showInMenuBarCheckbox = NSButton(checkboxWithTitle: "Show in Menu Bar", target: nil, action: nil)
     private let accessibilityValue = NSTextField(labelWithString: "Checking...")
     private let inputMonitoringValue = NSTextField(labelWithString: "Checking...")
     private let eventTapValue = NSTextField(labelWithString: "Checking...")
@@ -65,6 +71,10 @@ final class MainWindowController: NSWindowController {
     func update(state: MainWindowState) {
         focusCheckbox.state = state.focusOnRightClick ? .on : .off
         launchAtLoginCheckbox.state = state.launchAtLogin ? .on : .off
+        showInDockCheckbox.state = state.showInDock ? .on : .off
+        showInMenuBarCheckbox.state = state.showInMenuBar ? .on : .off
+        showInDockCheckbox.isEnabled = state.showInMenuBar || !state.showInDock
+        showInMenuBarCheckbox.isEnabled = state.showInDock || !state.showInMenuBar
 
         setStatus(accessibilityValue, text: state.accessibilityGranted ? "Granted" : "Missing", isReady: state.accessibilityGranted)
         setStatus(inputMonitoringValue, text: state.inputMonitoringGranted ? "Granted" : "Missing", isReady: state.inputMonitoringGranted)
@@ -126,6 +136,10 @@ final class MainWindowController: NSWindowController {
         focusCheckbox.action = #selector(toggleFocusOnRightClick)
         launchAtLoginCheckbox.target = self
         launchAtLoginCheckbox.action = #selector(toggleLaunchAtLogin)
+        showInDockCheckbox.target = self
+        showInDockCheckbox.action = #selector(toggleShowInDock)
+        showInMenuBarCheckbox.target = self
+        showInMenuBarCheckbox.action = #selector(toggleShowInMenuBar)
     }
 
     private func makeHeader() -> NSView {
@@ -236,7 +250,13 @@ final class MainWindowController: NSWindowController {
 
     private func makeOptionsSection() -> NSView {
         let label = sectionLabel("Options")
-        let stack = NSStackView(views: [label, focusCheckbox, launchAtLoginCheckbox])
+        let stack = NSStackView(views: [
+            label,
+            focusCheckbox,
+            launchAtLoginCheckbox,
+            showInDockCheckbox,
+            showInMenuBarCheckbox
+        ])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 7
@@ -387,7 +407,7 @@ final class MainWindowController: NSWindowController {
 
         let targetContentSize = NSSize(
             width: 480,
-            height: showingApplicationsPrompt ? 596 : 476
+            height: showingApplicationsPrompt ? 644 : 524
         )
         let targetFrameSize = window.frameRect(forContentRect: NSRect(origin: .zero, size: targetContentSize)).size
         var frame = window.frame
@@ -419,6 +439,14 @@ final class MainWindowController: NSWindowController {
 
     @objc private func toggleLaunchAtLogin() {
         delegate?.mainWindowController(self, setLaunchAtLogin: launchAtLoginCheckbox.state == .on)
+    }
+
+    @objc private func toggleShowInDock() {
+        delegate?.mainWindowController(self, setShowInDock: showInDockCheckbox.state == .on)
+    }
+
+    @objc private func toggleShowInMenuBar() {
+        delegate?.mainWindowController(self, setShowInMenuBar: showInMenuBarCheckbox.state == .on)
     }
 
     @objc private func requestPermissions() {

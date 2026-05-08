@@ -10,12 +10,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private let focusController = RightClickFocusController()
+    private let appearancePreferences = AppAppearancePreferences()
     private let mainWindowController = MainWindowController()
     private var refreshTimer: Timer?
     private var statusItem: NSStatusItem?
     private var showWindowItem: NSMenuItem?
     private var enabledItem: NSMenuItem?
     private var launchAtLoginItem: NSMenuItem?
+    private var showInDockItem: NSMenuItem?
+    private var showInMenuBarItem: NSMenuItem?
     private var permissionsItem: NSMenuItem?
     private var accessibilityStatusItem: NSMenuItem?
     private var inputMonitoringStatusItem: NSMenuItem?
@@ -58,13 +61,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         let app = NSApplication.shared
         let delegate = AppDelegate()
+        delegate.applyDockVisibility()
         app.delegate = delegate
         app.run()
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         mainWindowController.delegate = self
-        configureMenuBar()
+        updateMenuBarVisibility()
         startFocusController()
         startRefreshTimer()
     }
@@ -80,6 +84,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func configureMenuBar() {
+        removeMenuBarItem()
+
         let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         self.statusItem = statusItem
 
@@ -123,6 +129,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         launchAtLoginItem.target = self
         self.launchAtLoginItem = launchAtLoginItem
         menu.addItem(launchAtLoginItem)
+
+        let showInDockItem = NSMenuItem(
+            title: "Show in Dock",
+            action: #selector(toggleShowInDock),
+            keyEquivalent: ""
+        )
+        showInDockItem.target = self
+        self.showInDockItem = showInDockItem
+        menu.addItem(showInDockItem)
+
+        let showInMenuBarItem = NSMenuItem(
+            title: "Show in Menu Bar",
+            action: #selector(toggleShowInMenuBar),
+            keyEquivalent: ""
+        )
+        showInMenuBarItem.target = self
+        self.showInMenuBarItem = showInMenuBarItem
+        menu.addItem(showInMenuBarItem)
 
         menu.addItem(.separator())
 
@@ -183,6 +207,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         updateInterface()
     }
 
+    private func updateMenuBarVisibility() {
+        if appearancePreferences.showInMenuBar {
+            if statusItem == nil {
+                configureMenuBar()
+            } else {
+                updateInterface()
+            }
+        } else {
+            removeMenuBarItem()
+            updateInterface()
+        }
+    }
+
+    private func removeMenuBarItem() {
+        if let statusItem {
+            NSStatusBar.system.removeStatusItem(statusItem)
+        }
+
+        statusItem = nil
+        showWindowItem = nil
+        enabledItem = nil
+        launchAtLoginItem = nil
+        showInDockItem = nil
+        showInMenuBarItem = nil
+        permissionsItem = nil
+        accessibilityStatusItem = nil
+        inputMonitoringStatusItem = nil
+        eventTapStatusItem = nil
+        lastClickItem = nil
+    }
+
     func menuWillOpen(_ menu: NSMenu) {
         updateInterface()
     }
@@ -240,6 +295,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func updateMenu() {
         enabledItem?.state = focusController.isEnabled ? .on : .off
         updateLaunchAtLoginMenuItem()
+        updateAppearanceMenuItems()
         accessibilityStatusItem?.title = "Accessibility: \(hasAccessibilityAccess ? "Granted" : "Missing")"
         inputMonitoringStatusItem?.title = "Input Monitoring: \(focusController.hasInputMonitoringAccess ? "Granted" : "Missing")"
         eventTapStatusItem?.title = "Event Tap: \(focusController.isEventTapRunning ? "Running" : "Stopped")"
@@ -274,6 +330,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             eventTapRunning: focusController.isEventTapRunning,
             lastTarget: focusController.lastFocusSummary,
             lastError: focusController.lastError,
+            showInDock: appearancePreferences.showInDock,
+            showInMenuBar: appearancePreferences.showInMenuBar,
             needsApplicationsFolderPrompt: !isRunningFromApplicationsFolder
         )
     }
@@ -281,6 +339,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func updateLaunchAtLoginMenuItem() {
         launchAtLoginItem?.state = LaunchAtLoginController.isEnabled ? .on : .off
         launchAtLoginItem?.title = "Launch at Login"
+    }
+
+    private func updateAppearanceMenuItems() {
+        showInDockItem?.state = appearancePreferences.showInDock ? .on : .off
+        showInMenuBarItem?.state = appearancePreferences.showInMenuBar ? .on : .off
+        showInDockItem?.isEnabled = appearancePreferences.showInMenuBar || !appearancePreferences.showInDock
+        showInMenuBarItem?.isEnabled = appearancePreferences.showInDock || !appearancePreferences.showInMenuBar
     }
 
     private var isRunningFromApplicationsFolder: Bool {
@@ -326,6 +391,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         updateInterface()
+    }
+
+    @objc private func toggleShowInDock() {
+        setShowInDock(!appearancePreferences.showInDock)
+    }
+
+    private func setShowInDock(_ enabled: Bool) {
+        guard enabled || appearancePreferences.showInMenuBar else {
+            focusController.setLastError("Keep either the Dock icon or the menu-bar item visible.")
+            updateInterface()
+            return
+        }
+
+        appearancePreferences.showInDock = enabled
+        applyDockVisibility()
+        focusController.clearLastError()
+        updateInterface()
+    }
+
+    @objc private func toggleShowInMenuBar() {
+        setShowInMenuBar(!appearancePreferences.showInMenuBar)
+    }
+
+    private func setShowInMenuBar(_ enabled: Bool) {
+        guard enabled || appearancePreferences.showInDock else {
+            focusController.setLastError("Keep either the Dock icon or the menu-bar item visible.")
+            updateInterface()
+            return
+        }
+
+        appearancePreferences.showInMenuBar = enabled
+        focusController.clearLastError()
+        updateMenuBarVisibility()
+    }
+
+    private func applyDockVisibility() {
+        NSApp.setActivationPolicy(appearancePreferences.showInDock ? .regular : .accessory)
     }
 
     @objc private func requestPermissions() {
@@ -421,6 +523,14 @@ extension AppDelegate: MainWindowControllerDelegate {
 
     func mainWindowController(_ controller: MainWindowController, setLaunchAtLogin enabled: Bool) {
         setLaunchAtLogin(enabled)
+    }
+
+    func mainWindowController(_ controller: MainWindowController, setShowInDock enabled: Bool) {
+        setShowInDock(enabled)
+    }
+
+    func mainWindowController(_ controller: MainWindowController, setShowInMenuBar enabled: Bool) {
+        setShowInMenuBar(enabled)
     }
 
     func mainWindowControllerDidRequestPermissions(_ controller: MainWindowController) {
