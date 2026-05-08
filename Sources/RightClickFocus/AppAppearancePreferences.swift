@@ -14,14 +14,12 @@ final class AppAppearancePreferences {
             Key.showInDock: true,
             Key.showInMenuBar: true
         ])
-        ensureVisibleControlSurface()
     }
 
     var showInDock: Bool {
         get { defaults.bool(forKey: Key.showInDock) }
         set {
             defaults.set(newValue, forKey: Key.showInDock)
-            ensureVisibleControlSurface()
         }
     }
 
@@ -29,13 +27,6 @@ final class AppAppearancePreferences {
         get { defaults.bool(forKey: Key.showInMenuBar) }
         set {
             defaults.set(newValue, forKey: Key.showInMenuBar)
-            ensureVisibleControlSurface()
-        }
-    }
-
-    func ensureVisibleControlSurface() {
-        if !defaults.bool(forKey: Key.showInDock), !defaults.bool(forKey: Key.showInMenuBar) {
-            defaults.set(true, forKey: Key.showInDock)
         }
     }
 }

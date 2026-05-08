@@ -73,8 +73,6 @@ final class MainWindowController: NSWindowController {
         launchAtLoginCheckbox.state = state.launchAtLogin ? .on : .off
         showInDockCheckbox.state = state.showInDock ? .on : .off
         showInMenuBarCheckbox.state = state.showInMenuBar ? .on : .off
-        showInDockCheckbox.isEnabled = state.showInMenuBar || !state.showInDock
-        showInMenuBarCheckbox.isEnabled = state.showInDock || !state.showInMenuBar
 
         setStatus(accessibilityValue, text: state.accessibilityGranted ? "Granted" : "Missing", isReady: state.accessibilityGranted)
         setStatus(inputMonitoringValue, text: state.inputMonitoringGranted ? "Granted" : "Missing", isReady: state.inputMonitoringGranted)

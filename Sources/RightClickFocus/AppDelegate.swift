@@ -358,8 +358,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func updateAppearanceMenuItems() {
         showInDockItem?.state = appearancePreferences.showInDock ? .on : .off
         showInMenuBarItem?.state = appearancePreferences.showInMenuBar ? .on : .off
-        showInDockItem?.isEnabled = appearancePreferences.showInMenuBar || !appearancePreferences.showInDock
-        showInMenuBarItem?.isEnabled = appearancePreferences.showInDock || !appearancePreferences.showInMenuBar
     }
 
     private var isRunningFromApplicationsFolder: Bool {
@@ -412,12 +410,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func setShowInDock(_ enabled: Bool) {
-        guard enabled || appearancePreferences.showInMenuBar else {
-            focusController.setLastError("Keep either the Dock icon or the menu-bar item visible.")
-            updateInterface()
-            return
-        }
-
         appearancePreferences.showInDock = enabled
         applyDockVisibility()
         focusController.clearLastError()
@@ -429,12 +421,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func setShowInMenuBar(_ enabled: Bool) {
-        guard enabled || appearancePreferences.showInDock else {
-            focusController.setLastError("Keep either the Dock icon or the menu-bar item visible.")
-            updateInterface()
-            return
-        }
-
         appearancePreferences.showInMenuBar = enabled
         focusController.clearLastError()
         updateMenuBarVisibility()

@@ -52,8 +52,10 @@ For normal installation, download the release DMG, open it, drag
 
 The app window and menu have toggles for `Focus on Right-Click` and `Launch at
 Login`, plus appearance toggles for showing the Dock icon and menu-bar item. At
-least one of the Dock icon or menu-bar item must stay visible so you can reopen
-the app window. Launch at Login writes a user LaunchAgent at
+least one of the Dock icon or menu-bar item is shown by default, but both can be
+hidden. If both are hidden, open `RightClickFocus.app` from Applications,
+Spotlight, or Finder to show the status window again. Launch at Login writes a
+user LaunchAgent at
 `~/Library/LaunchAgents/com.chasecargill.RightClickFocus.plist`; if you move the
 app, toggle Launch at Login off and on again so the saved path is updated. Login
 launches run quietly and do not open the status window by default.
