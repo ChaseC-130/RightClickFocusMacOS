@@ -26,6 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         configureMenuBar()
         requestAccessibilityIfNeeded()
+        requestInputMonitoringIfNeeded()
         startFocusController()
     }
 
@@ -122,15 +123,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         _ = AXIsProcessTrustedWithOptions(options)
     }
 
+    private func requestInputMonitoringIfNeeded() {
+        guard !focusController.hasInputMonitoringAccess else { return }
+        _ = focusController.requestInputMonitoringAccess()
+    }
+
     private func updateMenu() {
         enabledItem?.state = focusController.isEnabled ? .on : .off
 
-        if AXIsProcessTrusted() {
-            permissionsItem?.title = focusController.isEventTapRunning
-                ? "Permissions: Ready"
-                : "Permissions: Needs Input Monitoring"
-        } else {
+        if !AXIsProcessTrusted(), !focusController.hasInputMonitoringAccess {
+            permissionsItem?.title = "Permissions: Needs Accessibility + Input Monitoring"
+        } else if !AXIsProcessTrusted() {
             permissionsItem?.title = "Permissions: Needs Accessibility"
+        } else if !focusController.hasInputMonitoringAccess {
+            permissionsItem?.title = "Permissions: Needs Input Monitoring"
+        } else if focusController.isEventTapRunning {
+            permissionsItem?.title = "Permissions: Ready"
+        } else {
+            permissionsItem?.title = "Permissions: Event Tap Stopped"
         }
 
         if let message = focusController.lastError {
@@ -156,6 +166,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func requestPermissions() {
         requestAccessibilityIfNeeded()
+        requestInputMonitoringIfNeeded()
         _ = focusController.start()
         updateMenu()
     }

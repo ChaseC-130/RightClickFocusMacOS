@@ -25,13 +25,16 @@ build/RightClickFocus.app
 Open `build/RightClickFocus.app`. It runs as a menu-bar app with no Dock icon.
 
 On first launch, macOS needs privacy permissions before global right-click capture
-and Accessibility window focusing can work:
+and Accessibility window focusing can work. The app explicitly requests both
+permissions on startup:
 
 1. Grant `RightClickFocus` permission in System Settings > Privacy & Security > Accessibility.
-2. Grant `RightClickFocus` permission in System Settings > Privacy & Security > Input Monitoring if the event tap does not start.
+2. Grant `RightClickFocus` permission in System Settings > Privacy & Security > Input Monitoring.
 3. Relaunch the app, or choose `Permissions` from the menu-bar item.
 
-The menu-bar item also has shortcuts to open both privacy panes.
+The menu-bar item also has shortcuts to open both privacy panes. If macOS does
+not show the Input Monitoring prompt, use the menu shortcut to open Input
+Monitoring manually, add `RightClickFocus`, then quit and reopen the app.
 
 After a test click, open the menu-bar item and check `Last Target`. If it says
 `RuneLite`, the app detected the right window and the remaining problem is macOS

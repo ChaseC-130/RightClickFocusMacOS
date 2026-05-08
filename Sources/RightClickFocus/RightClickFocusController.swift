@@ -13,6 +13,22 @@ final class RightClickFocusController {
     private var runLoopSource: CFRunLoopSource?
     private let systemWideElement = AXUIElementCreateSystemWide()
 
+    var hasInputMonitoringAccess: Bool {
+        CGPreflightListenEventAccess()
+    }
+
+    func requestInputMonitoringAccess() -> Bool {
+        let didGrantAccess = CGRequestListenEventAccess()
+
+        if didGrantAccess {
+            lastError = nil
+        } else {
+            lastError = "Grant Input Monitoring permission, then relaunch or choose Permissions again."
+        }
+
+        return didGrantAccess
+    }
+
     func start() -> Bool {
         guard isEnabled else { return false }
 
@@ -22,6 +38,11 @@ final class RightClickFocusController {
 
         guard AXIsProcessTrusted() else {
             lastError = "Grant Accessibility permission, then relaunch or choose Permissions again."
+            return false
+        }
+
+        guard hasInputMonitoringAccess else {
+            lastError = "Grant Input Monitoring permission, then relaunch or choose Permissions again."
             return false
         }
 
