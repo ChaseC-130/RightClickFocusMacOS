@@ -4,22 +4,44 @@ import Foundation
 import Security
 
 enum Diagnostics {
-    static func run() {
+    static func run(outputPath: String? = nil) {
+        let report = makeReport() + "\n"
+
+        if let outputPath {
+            do {
+                try report.write(
+                    to: URL(fileURLWithPath: outputPath),
+                    atomically: true,
+                    encoding: .utf8
+                )
+            } catch {
+                print(report)
+                print("Could not write diagnostic report: \(error)")
+            }
+        } else {
+            print(report)
+        }
+    }
+
+    private static func makeReport() -> String {
         let bundle = Bundle.main
         let executableURL = bundle.executableURL
         let bundleURL = bundle.bundleURL
 
-        print("RightClickFocus Diagnostics")
-        print("===========================")
-        print("Bundle identifier: \(bundle.bundleIdentifier ?? "missing")")
-        print("Bundle path: \(bundleURL.path)")
-        print("Executable path: \(executableURL?.path ?? "missing")")
-        print("Process path: \(CommandLine.arguments.first ?? "missing")")
-        print("Code signature: \(codeSignatureStatus(bundleURL: bundleURL))")
-        print("Accessibility trusted: \(AXIsProcessTrusted() ? "yes" : "no")")
-        print("Input Monitoring preflight: \(CGPreflightListenEventAccess() ? "yes" : "no")")
-        print("Right-click event tap creatable: \(canCreateRightClickEventTap() ? "yes" : "no")")
-        print("Frontmost app: \(NSWorkspace.shared.frontmostApplication?.localizedName ?? "unknown")")
+        return [
+            "RightClickFocus Diagnostics",
+            "===========================",
+            "Launch mode: LaunchServices app bundle",
+            "Bundle identifier: \(bundle.bundleIdentifier ?? "missing")",
+            "Bundle path: \(bundleURL.path)",
+            "Executable path: \(executableURL?.path ?? "missing")",
+            "Process path: \(CommandLine.arguments.first ?? "missing")",
+            "Code signature: \(codeSignatureStatus(bundleURL: bundleURL))",
+            "Accessibility trusted: \(AXIsProcessTrusted() ? "yes" : "no")",
+            "Input Monitoring preflight: \(CGPreflightListenEventAccess() ? "yes" : "no")",
+            "Right-click event tap creatable: \(canCreateRightClickEventTap() ? "yes" : "no")",
+            "Frontmost app: \(NSWorkspace.shared.frontmostApplication?.localizedName ?? "unknown")"
+        ].joined(separator: "\n")
     }
 
     private static func codeSignatureStatus(bundleURL: URL) -> String {

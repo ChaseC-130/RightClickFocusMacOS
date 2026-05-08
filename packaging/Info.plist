@@ -7,7 +7,7 @@
     <key>CFBundleExecutable</key>
     <string>RightClickFocus</string>
     <key>CFBundleIdentifier</key>
-    <string>local.codex.RightClickFocus</string>
+    <string>com.chasecargill.RightClickFocus</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>

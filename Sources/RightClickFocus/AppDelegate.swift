@@ -13,9 +13,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem?
     private var enabledItem: NSMenuItem?
     private var permissionsItem: NSMenuItem?
+    private var accessibilityStatusItem: NSMenuItem?
+    private var inputMonitoringStatusItem: NSMenuItem?
+    private var eventTapStatusItem: NSMenuItem?
     private var lastClickItem: NSMenuItem?
 
     static func main() {
+        if let diagnoseToIndex = CommandLine.arguments.firstIndex(of: "--diagnose-to") {
+            let outputPath = CommandLine.arguments.dropFirst(diagnoseToIndex + 1).first
+            Diagnostics.run(outputPath: outputPath)
+            Foundation.exit(0)
+        }
+
         if CommandLine.arguments.contains("--diagnose") {
             Diagnostics.run()
             Foundation.exit(0)
@@ -30,8 +39,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         configureMenuBar()
-        requestAccessibilityIfNeeded()
-        requestInputMonitoringIfNeeded()
         startFocusController()
     }
 
@@ -72,6 +79,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         permissionsItem.target = self
         self.permissionsItem = permissionsItem
         menu.addItem(permissionsItem)
+
+        let accessibilityStatusItem = NSMenuItem(title: "Accessibility: Checking...", action: nil, keyEquivalent: "")
+        accessibilityStatusItem.isEnabled = false
+        self.accessibilityStatusItem = accessibilityStatusItem
+        menu.addItem(accessibilityStatusItem)
+
+        let inputMonitoringStatusItem = NSMenuItem(title: "Input Monitoring: Checking...", action: nil, keyEquivalent: "")
+        inputMonitoringStatusItem.isEnabled = false
+        self.inputMonitoringStatusItem = inputMonitoringStatusItem
+        menu.addItem(inputMonitoringStatusItem)
+
+        let eventTapStatusItem = NSMenuItem(title: "Event Tap: Checking...", action: nil, keyEquivalent: "")
+        eventTapStatusItem.isEnabled = false
+        self.eventTapStatusItem = eventTapStatusItem
+        menu.addItem(eventTapStatusItem)
 
         let lastClickItem = NSMenuItem(title: "Last Target: None", action: nil, keyEquivalent: "")
         lastClickItem.isEnabled = false
@@ -135,13 +157,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func updateMenu() {
         enabledItem?.state = focusController.isEnabled ? .on : .off
+        accessibilityStatusItem?.title = "Accessibility: \(AXIsProcessTrusted() ? "Granted" : "Missing")"
+        inputMonitoringStatusItem?.title = "Input Monitoring: \(focusController.hasInputMonitoringAccess ? "Granted" : "Missing")"
+        eventTapStatusItem?.title = "Event Tap: \(focusController.isEventTapRunning ? "Running" : "Stopped")"
 
         if !AXIsProcessTrusted(), !focusController.hasInputMonitoringAccess {
-            permissionsItem?.title = "Permissions: Needs Accessibility + Input Monitoring"
+            permissionsItem?.title = "Request Accessibility + Input Monitoring"
         } else if !AXIsProcessTrusted() {
-            permissionsItem?.title = "Permissions: Needs Accessibility"
+            permissionsItem?.title = "Request Accessibility"
         } else if !focusController.hasInputMonitoringAccess {
-            permissionsItem?.title = "Permissions: Needs Input Monitoring"
+            permissionsItem?.title = "Request Input Monitoring"
         } else if focusController.isEventTapRunning {
             permissionsItem?.title = "Permissions: Ready"
         } else {

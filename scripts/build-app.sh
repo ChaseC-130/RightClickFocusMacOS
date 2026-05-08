@@ -18,6 +18,18 @@ cp "$BIN_PATH" "$MACOS_DIR/$APP_NAME"
 cp "$ROOT/packaging/Info.plist" "$CONTENTS_DIR/Info.plist"
 chmod +x "$MACOS_DIR/$APP_NAME"
 
-codesign --force --deep --sign - "$APP_DIR"
+SIGN_IDENTITY="${CODESIGN_IDENTITY:-}"
+
+if [[ -z "$SIGN_IDENTITY" ]]; then
+  SIGN_IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null | awk -F '"' '/Apple Development/ { print $2; exit }')"
+fi
+
+if [[ -n "$SIGN_IDENTITY" ]]; then
+  echo "Signing with $SIGN_IDENTITY"
+  codesign --force --deep --sign "$SIGN_IDENTITY" "$APP_DIR"
+else
+  echo "Signing ad-hoc because no code-signing identity was found"
+  codesign --force --deep --sign - "$APP_DIR"
+fi
 
 echo "Built $APP_DIR"

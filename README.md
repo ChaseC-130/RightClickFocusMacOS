@@ -20,6 +20,10 @@ The packaged app is written to:
 build/RightClickFocus.app
 ```
 
+If an Apple Development signing identity is available, the build script uses it
+so macOS privacy grants remain stable across rebuilds. Otherwise it falls back
+to ad-hoc signing, which may require granting permissions again after rebuilding.
+
 ## Run
 
 Open `build/RightClickFocus.app`. It runs as a menu-bar app with no Dock icon.
@@ -36,6 +40,14 @@ The menu-bar item also has shortcuts to open both privacy panes. If macOS does
 not show the Input Monitoring prompt, use the menu shortcut to open Input
 Monitoring manually, add `RightClickFocus`, then quit and reopen the app.
 
+If Settings shows `RightClickFocus` as enabled but the app still reports missing
+permissions, reset stale TCC entries and grant permissions to the current bundle:
+
+```sh
+./scripts/reset-permissions.sh
+open build/RightClickFocus.app
+```
+
 ## Diagnose Permissions
 
 To audit what macOS has granted to this exact app bundle:
@@ -44,9 +56,14 @@ To audit what macOS has granted to this exact app bundle:
 ./scripts/diagnose.sh
 ```
 
+The script launches `RightClickFocus.app` through LaunchServices, writes a report,
+and prints it. That matters because launching the executable directly from a shell
+can be attributed differently by macOS privacy controls.
+
 `Accessibility trusted` and `Input Monitoring preflight` should both say `yes`.
+`Input Monitoring preflight` is the important signal for live right-click capture.
 `Right-click event tap creatable` should also say `yes`; if it says `no`, the app
-cannot currently receive global right-click events.
+cannot even create the listener.
 
 After a test click, open the menu-bar item and check `Last Target`. If it says
 `RuneLite`, the app detected the right window and the remaining problem is macOS

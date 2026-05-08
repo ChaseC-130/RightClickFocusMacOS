@@ -9,7 +9,7 @@ final class RightClickFocusController {
     private(set) var lastError: String?
     private(set) var lastFocusSummary = "None"
 
-    private let logger = Logger(subsystem: "local.codex.RightClickFocus", category: "focus")
+    private let logger = Logger(subsystem: "com.chasecargill.RightClickFocus", category: "focus")
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
     private let systemWideElement = AXUIElementCreateSystemWide()
@@ -51,7 +51,7 @@ final class RightClickFocusController {
         guard let tap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
             place: .headInsertEventTap,
-            options: .defaultTap,
+            options: .listenOnly,
             eventsOfInterest: mask,
             callback: eventTapCallback,
             userInfo: Unmanaged.passUnretained(self).toOpaque()
