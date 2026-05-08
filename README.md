@@ -43,10 +43,9 @@ To create a notarized public release, first store notary credentials locally wit
 
 ## Run
 
-Open `build/RightClickFocus.app`. It runs as a menu-bar app with no Dock icon.
+Open `build/RightClickFocus.app`. It runs as a small macOS utility with a menu-bar item.
 
-The menu has toggles for `Launch at Login` and `Show Menu Bar Icon`. Launch at
-Login writes a user LaunchAgent at
+The menu has a `Launch at Login` toggle. Launch at Login writes a user LaunchAgent at
 `~/Library/LaunchAgents/com.chasecargill.RightClickFocus.plist`; if you move the
 app, toggle Launch at Login off and on again so the saved path is updated.
 
@@ -55,18 +54,6 @@ You can also control Launch at Login from Terminal:
 ```sh
 ./scripts/enable-launch-at-login.sh
 ./scripts/disable-launch-at-login.sh
-```
-
-If you hide the menu bar icon and want it back later, run:
-
-```sh
-./scripts/show-menu-icon.sh
-```
-
-You can also hide it from Terminal:
-
-```sh
-./scripts/hide-menu-icon.sh
 ```
 
 On first launch, macOS needs privacy permissions before global right-click capture

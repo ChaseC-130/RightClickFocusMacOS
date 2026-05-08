@@ -13,7 +13,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem?
     private var enabledItem: NSMenuItem?
     private var launchAtLoginItem: NSMenuItem?
-    private var menuBarIconItem: NSMenuItem?
     private var permissionsItem: NSMenuItem?
     private var accessibilityStatusItem: NSMenuItem?
     private var inputMonitoringStatusItem: NSMenuItem?
@@ -29,18 +28,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         if CommandLine.arguments.contains("--diagnose") {
             Diagnostics.run()
-            Foundation.exit(0)
-        }
-
-        if CommandLine.arguments.contains("--show-menu-icon") {
-            Preferences.showMenuBarIcon = true
-            Preferences.notifyChanged()
-            Foundation.exit(0)
-        }
-
-        if CommandLine.arguments.contains("--hide-menu-icon") {
-            Preferences.showMenuBarIcon = false
-            Preferences.notifyChanged()
             Foundation.exit(0)
         }
 
@@ -69,36 +56,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let app = NSApplication.shared
         let delegate = AppDelegate()
         app.delegate = delegate
-        app.setActivationPolicy(.accessory)
         app.run()
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        DistributedNotificationCenter.default().addObserver(
-            self,
-            selector: #selector(preferencesChanged),
-            name: Preferences.changedNotification,
-            object: nil
-        )
-        applyMenuBarPreference()
+        configureMenuBar()
         startFocusController()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         focusController.stop()
-        DistributedNotificationCenter.default().removeObserver(self)
-    }
-
-    private func applyMenuBarPreference() {
-        if Preferences.showMenuBarIcon {
-            if statusItem == nil {
-                configureMenuBar()
-            } else {
-                updateMenu()
-            }
-        } else {
-            removeMenuBarIcon()
-        }
     }
 
     private func configureMenuBar() {
@@ -134,15 +101,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         launchAtLoginItem.target = self
         self.launchAtLoginItem = launchAtLoginItem
         menu.addItem(launchAtLoginItem)
-
-        let menuBarIconItem = NSMenuItem(
-            title: "Show Menu Bar Icon",
-            action: #selector(toggleMenuBarIcon),
-            keyEquivalent: ""
-        )
-        menuBarIconItem.target = self
-        self.menuBarIconItem = menuBarIconItem
-        menu.addItem(menuBarIconItem)
 
         menu.addItem(.separator())
 
@@ -203,22 +161,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         updateMenu()
     }
 
-    private func removeMenuBarIcon() {
-        if let statusItem {
-            NSStatusBar.system.removeStatusItem(statusItem)
-        }
-
-        statusItem = nil
-        enabledItem = nil
-        launchAtLoginItem = nil
-        menuBarIconItem = nil
-        permissionsItem = nil
-        accessibilityStatusItem = nil
-        inputMonitoringStatusItem = nil
-        eventTapStatusItem = nil
-        lastClickItem = nil
-    }
-
     func menuWillOpen(_ menu: NSMenu) {
         updateMenu()
     }
@@ -248,7 +190,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func updateMenu() {
         enabledItem?.state = focusController.isEnabled ? .on : .off
         updateLaunchAtLoginMenuItem()
-        menuBarIconItem?.state = Preferences.showMenuBarIcon ? .on : .off
         accessibilityStatusItem?.title = "Accessibility: \(hasAccessibilityAccess ? "Granted" : "Missing")"
         inputMonitoringStatusItem?.title = "Input Monitoring: \(focusController.hasInputMonitoringAccess ? "Granted" : "Missing")"
         eventTapStatusItem?.title = "Event Tap: \(focusController.isEventTapRunning ? "Running" : "Stopped")"
@@ -302,12 +243,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         updateMenu()
     }
 
-    @objc private func toggleMenuBarIcon() {
-        Preferences.showMenuBarIcon.toggle()
-        Preferences.notifyChanged()
-        applyMenuBarPreference()
-    }
-
     @objc private func requestPermissions() {
         let needsAccessibility = !hasAccessibilityAccess
         let needsInputMonitoring = !focusController.hasInputMonitoringAccess
@@ -341,9 +276,5 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func quit() {
         NSApp.terminate(nil)
-    }
-
-    @objc private func preferencesChanged() {
-        applyMenuBarPreference()
     }
 }
