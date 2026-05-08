@@ -43,8 +43,9 @@ To create a notarized public release, first store notary credentials locally wit
 
 ## Run
 
-For local development, open `build/RightClickFocus.app`. It runs as a small macOS
-utility with a menu-bar item and a minimal status window.
+For local development, open `build/RightClickFocus.app`. It runs quietly with a
+Dock icon and menu-bar item. Click the Dock icon or choose `Open
+RightClickFocus` from the menu-bar item to open the status window.
 
 For normal installation, download the release DMG, open it, drag
 `RightClickFocus.app` to Applications, then open it from Applications.

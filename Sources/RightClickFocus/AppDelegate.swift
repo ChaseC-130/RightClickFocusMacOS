@@ -66,7 +66,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         mainWindowController.delegate = self
         configureMenuBar()
         startFocusController()
-        mainWindowController.showWindow(nil)
         startRefreshTimer()
     }
 
