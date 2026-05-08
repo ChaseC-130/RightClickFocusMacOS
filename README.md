@@ -40,6 +40,11 @@ The menu-bar item also has shortcuts to open both privacy panes. If macOS does
 not show the Input Monitoring prompt, use the menu shortcut to open Input
 Monitoring manually, add `RightClickFocus`, then quit and reopen the app.
 
+macOS may show the Input Monitoring prompt only once for a given app identity. If
+the prompt has already been dismissed or a stale privacy entry exists, choosing
+`Request Input Monitoring / Open Settings` opens the Settings pane instead of
+showing another prompt.
+
 If Settings shows `RightClickFocus` as enabled but the app still reports missing
 permissions, reset stale TCC entries and grant permissions to the current bundle:
 

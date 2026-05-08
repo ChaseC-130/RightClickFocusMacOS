@@ -142,7 +142,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func requestAccessibilityIfNeeded() {
-        guard !AXIsProcessTrusted() else { return }
+        guard !hasAccessibilityAccess else { return }
 
         let options = [
             "AXTrustedCheckOptionPrompt": true
@@ -150,27 +150,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         _ = AXIsProcessTrustedWithOptions(options)
     }
 
-    private func requestInputMonitoringIfNeeded() {
-        guard !focusController.hasInputMonitoringAccess else { return }
-        _ = focusController.requestInputMonitoringAccess()
+    private var hasAccessibilityAccess: Bool {
+        AXIsProcessTrusted()
     }
 
     private func updateMenu() {
         enabledItem?.state = focusController.isEnabled ? .on : .off
-        accessibilityStatusItem?.title = "Accessibility: \(AXIsProcessTrusted() ? "Granted" : "Missing")"
+        accessibilityStatusItem?.title = "Accessibility: \(hasAccessibilityAccess ? "Granted" : "Missing")"
         inputMonitoringStatusItem?.title = "Input Monitoring: \(focusController.hasInputMonitoringAccess ? "Granted" : "Missing")"
         eventTapStatusItem?.title = "Event Tap: \(focusController.isEventTapRunning ? "Running" : "Stopped")"
 
-        if !AXIsProcessTrusted(), !focusController.hasInputMonitoringAccess {
-            permissionsItem?.title = "Request Accessibility + Input Monitoring"
-        } else if !AXIsProcessTrusted() {
-            permissionsItem?.title = "Request Accessibility"
+        if !hasAccessibilityAccess, !focusController.hasInputMonitoringAccess {
+            permissionsItem?.title = "Request Permissions / Open Settings"
+        } else if !hasAccessibilityAccess {
+            permissionsItem?.title = "Request Accessibility / Open Settings"
         } else if !focusController.hasInputMonitoringAccess {
-            permissionsItem?.title = "Request Input Monitoring"
+            permissionsItem?.title = "Request Input Monitoring / Open Settings"
         } else if focusController.isEventTapRunning {
             permissionsItem?.title = "Permissions: Ready"
         } else {
-            permissionsItem?.title = "Permissions: Event Tap Stopped"
+            permissionsItem?.title = "Restart Event Tap"
         }
 
         if let message = focusController.lastError {
@@ -195,9 +194,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func requestPermissions() {
-        requestAccessibilityIfNeeded()
-        requestInputMonitoringIfNeeded()
+        let needsAccessibility = !hasAccessibilityAccess
+        let needsInputMonitoring = !focusController.hasInputMonitoringAccess
+
+        if needsAccessibility {
+            requestAccessibilityIfNeeded()
+        }
+
+        if needsInputMonitoring {
+            _ = focusController.requestInputMonitoringAccess()
+        }
+
         _ = focusController.start()
+
+        if !focusController.hasInputMonitoringAccess {
+            NSWorkspace.shared.open(SettingsURL.inputMonitoring)
+        } else if !hasAccessibilityAccess {
+            NSWorkspace.shared.open(SettingsURL.accessibility)
+        }
+
         updateMenu()
     }
 
