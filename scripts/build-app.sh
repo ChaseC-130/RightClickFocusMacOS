@@ -28,7 +28,7 @@ fi
 
 if [[ -n "$SIGN_IDENTITY" ]]; then
   echo "Signing with $SIGN_IDENTITY"
-  if [[ "$SIGN_IDENTITY" == Developer\ ID\ Application:* ]]; then
+  if [[ "${RIGHTCLICKFOCUS_OFFICIAL_RELEASE:-}" == "1" || "$SIGN_IDENTITY" == Developer\ ID\ Application:* ]]; then
     codesign --force --deep --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP_DIR"
   else
     codesign --force --deep --sign "$SIGN_IDENTITY" "$APP_DIR"
