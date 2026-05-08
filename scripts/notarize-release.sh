@@ -36,7 +36,7 @@ ditto -c -k --keepParent "$ROOT/build/$APP_NAME.app" "$ZIP_PATH"
 
 DMG_SIGN_IDENTITY="${CODESIGN_IDENTITY:-}"
 if [[ -z "$DMG_SIGN_IDENTITY" ]]; then
-  DMG_SIGN_IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null | awk -F '"' '/Developer ID Application/ { print $2; exit }')"
+  DMG_SIGN_IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null | awk '/Developer ID Application/ { print $2; exit }')"
 fi
 
 if [[ -z "$DMG_SIGN_IDENTITY" ]]; then
