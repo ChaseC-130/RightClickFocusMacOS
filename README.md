@@ -22,7 +22,7 @@ To create a distributable zip:
 ./scripts/package-release.sh
 ```
 
-The release zip and checksum are written to `build/`.
+The release zip, DMG, and checksums are written to `build/`.
 
 Local builds are ad-hoc signed by default so anyone can compile the project
 without Apple Developer credentials. Ad-hoc builds may require granting macOS
@@ -43,8 +43,11 @@ To create a notarized public release, first store notary credentials locally wit
 
 ## Run
 
-Open `build/RightClickFocus.app`. It runs as a small macOS utility with a menu-bar
-item and a minimal status window.
+For local development, open `build/RightClickFocus.app`. It runs as a small macOS
+utility with a menu-bar item and a minimal status window.
+
+For normal installation, download the release DMG, open it, drag
+`RightClickFocus.app` to Applications, then open it from Applications.
 
 The app window and menu have toggles for `Focus on Right-Click` and `Launch at
 Login`. Launch at Login writes a user LaunchAgent at
@@ -52,9 +55,10 @@ Login`. Launch at Login writes a user LaunchAgent at
 app, toggle Launch at Login off and on again so the saved path is updated.
 
 If the app is launched outside `/Applications` or `~/Applications`, the status
-window prompts you to drag `RightClickFocus.app` into Applications and reopen it
-from there. Running from Applications keeps privacy permissions and Launch at
-Login pointed at the installed copy.
+window prompts you to use the DMG installer window or otherwise move
+`RightClickFocus.app` into Applications and reopen it from there. Running from
+Applications keeps privacy permissions and Launch at Login pointed at the
+installed copy.
 
 You can also control Launch at Login from Terminal:
 
@@ -113,9 +117,13 @@ app name macOS reported under the right-click.
 Use the local notarized release scripts for public downloads:
 
 ```sh
-./scripts/notarize-release.sh 0.1.1
-./scripts/publish-release.sh 0.1.1
+./scripts/notarize-release.sh
+./scripts/publish-release.sh
 ```
+
+The notarized release script creates both a zip and a DMG. The DMG is the primary
+user-facing download because it presents the standard macOS drag-to-Applications
+install window.
 
 The GitHub Actions release workflow remains available for manual ad-hoc test
 builds, but public releases should be Developer ID signed and notarized locally.

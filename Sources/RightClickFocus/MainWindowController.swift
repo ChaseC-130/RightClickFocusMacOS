@@ -128,15 +128,39 @@ final class MainWindowController: NSWindowController {
     }
 
     private func makeHeader() -> NSView {
+        let icon = NSImageView(image: NSApp.applicationIconImage)
+        icon.imageScaling = .scaleProportionallyUpOrDown
+        icon.translatesAutoresizingMaskIntoConstraints = false
+
         let title = NSTextField(labelWithString: "RightClickFocus")
         title.font = .systemFont(ofSize: 18, weight: .semibold)
 
-        let stack = NSStackView(views: [title])
-        stack.orientation = .vertical
-        stack.alignment = .leading
+        let subtitle = NSTextField(labelWithString: "Focus windows when you right-click them.")
+        subtitle.font = .systemFont(ofSize: 13)
+        subtitle.textColor = .secondaryLabelColor
+
+        let textStack = NSStackView(views: [title, subtitle])
+        textStack.orientation = .vertical
+        textStack.alignment = .leading
+        textStack.spacing = 2
+
+        let stack = NSStackView(views: [icon, textStack])
+        stack.orientation = .horizontal
+        stack.alignment = .centerY
+        stack.spacing = 10
         stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.widthAnchor.constraint(equalToConstant: 440).isActive = true
-        return stack
+
+        NSLayoutConstraint.activate([
+            icon.widthAnchor.constraint(equalToConstant: 44),
+            icon.heightAnchor.constraint(equalToConstant: 44)
+        ])
+
+        let wrapper = NSStackView(views: [stack])
+        wrapper.orientation = .vertical
+        wrapper.alignment = .leading
+        wrapper.translatesAutoresizingMaskIntoConstraints = false
+        wrapper.widthAnchor.constraint(equalToConstant: 440).isActive = true
+        return wrapper
     }
 
     private func makeApplicationsPrompt() -> NSView {
@@ -157,7 +181,7 @@ final class MainWindowController: NSWindowController {
         let title = NSTextField(labelWithString: "Move to Applications")
         title.font = .systemFont(ofSize: 13, weight: .semibold)
 
-        let message = NSTextField(labelWithString: "This copy is not running from Applications. Drag RightClickFocus.app there, then reopen it so permissions and Launch at Login stay tied to the installed copy.")
+        let message = NSTextField(labelWithString: "This copy is not running from Applications. If you opened the disk image, drag RightClickFocus.app onto Applications there, then reopen it from Applications.")
         message.font = .systemFont(ofSize: 12)
         message.textColor = .secondaryLabelColor
         message.maximumNumberOfLines = 3

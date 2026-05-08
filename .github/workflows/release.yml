@@ -29,13 +29,13 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
 
-      - name: Build release zip
+      - name: Build release artifacts
         run: ./scripts/package-release.sh "${{ steps.version.outputs.version }}"
 
       - name: Write release notes
         run: |
           cat > build/release-notes.md <<'NOTES'
-          Download the zip, unzip it, and open `RightClickFocus.app`.
+          Download the DMG, open it, drag `RightClickFocus.app` to Applications, then open it from Applications.
 
           On first launch, grant Accessibility and Input Monitoring permissions in System Settings.
 
@@ -50,11 +50,15 @@ jobs:
         run: |
           if gh release view "$TAG_NAME" >/dev/null 2>&1; then
             gh release upload "$TAG_NAME" \
+              "build/RightClickFocus-$VERSION.dmg" \
+              "build/RightClickFocus-$VERSION.dmg.sha256" \
               "build/RightClickFocus-$VERSION.zip" \
               "build/RightClickFocus-$VERSION.zip.sha256" \
               --clobber
           else
             gh release create "$TAG_NAME" \
+              "build/RightClickFocus-$VERSION.dmg" \
+              "build/RightClickFocus-$VERSION.dmg.sha256" \
               "build/RightClickFocus-$VERSION.zip" \
               "build/RightClickFocus-$VERSION.zip.sha256" \
               --title "RightClickFocus $TAG_NAME" \

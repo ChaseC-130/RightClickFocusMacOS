@@ -7,16 +7,20 @@ VERSION="${1:-$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "
 ARTIFACT_BASENAME="$APP_NAME-$VERSION"
 ZIP_PATH="$ROOT/build/$ARTIFACT_BASENAME.zip"
 CHECKSUM_PATH="$ZIP_PATH.sha256"
+DMG_PATH="$ROOT/build/$ARTIFACT_BASENAME.dmg"
+DMG_CHECKSUM_PATH="$DMG_PATH.sha256"
 
 "$ROOT/scripts/build-app.sh"
 
-rm -f "$ZIP_PATH" "$CHECKSUM_PATH"
+rm -f "$ZIP_PATH" "$CHECKSUM_PATH" "$DMG_PATH" "$DMG_CHECKSUM_PATH"
 ditto -c -k --keepParent "$ROOT/build/$APP_NAME.app" "$ZIP_PATH"
 
 (
   cd "$ROOT/build"
   shasum -a 256 "$(basename "$ZIP_PATH")" > "$(basename "$CHECKSUM_PATH")"
 )
+
+"$ROOT/scripts/package-dmg.sh" "$VERSION" --no-build
 
 echo "Packaged $ZIP_PATH"
 echo "Wrote $CHECKSUM_PATH"

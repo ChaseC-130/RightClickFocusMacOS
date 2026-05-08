@@ -14,8 +14,10 @@ BIN_PATH="$(swift build --package-path "$ROOT" -c release --show-bin-path)/$APP_
 
 rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
+"$ROOT/scripts/build-icon.sh"
 cp "$BIN_PATH" "$MACOS_DIR/$APP_NAME"
 cp "$ROOT/packaging/Info.plist" "$CONTENTS_DIR/Info.plist"
+cp "$ROOT/build/AppIcon.icns" "$RESOURCES_DIR/AppIcon.icns"
 chmod +x "$MACOS_DIR/$APP_NAME"
 
 SIGN_IDENTITY="${CODESIGN_IDENTITY:-}"
