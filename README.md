@@ -1,8 +1,8 @@
 # RightClickFocus
 
 RightClickFocus is a tiny macOS menu-bar utility for macOS Tahoe-style desktop use.
-When you right-click a background window, it tries to focus and raise that window
-before the contextual menu opens.
+When you right-click a visible background window, it tries to focus and raise
+that window before the contextual menu opens.
 
 ## Build
 
@@ -144,7 +144,9 @@ builds, but public releases should be Developer ID signed and notarized locally.
 ## Notes
 
 - The app uses a global `CGEvent` tap for right-clicks and Accessibility APIs to find
-  and raise the window under the pointer.
+  and raise the visible window under the pointer.
+- If another window or fullscreen surface covers the click, the app does not pull
+  up windows hidden underneath it.
 - Some apps use custom or restricted Accessibility behavior, so individual windows may
   not always raise perfectly.
 - If you rebuild the app after granting permissions, macOS may ask again because the

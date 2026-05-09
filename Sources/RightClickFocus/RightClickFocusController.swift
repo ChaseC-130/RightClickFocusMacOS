@@ -121,12 +121,38 @@ final class RightClickFocusController {
     }
 
     private func targetWindow(at point: CGPoint) -> TargetWindow? {
-        guard var target = graphicsWindow(at: point) else {
-            return accessibilityWindow(at: point)
-        }
+        switch graphicsWindowHit(at: point) {
+        case .target(var target):
+            guard !frontmostApplicationCovers(point, excluding: target.pid) else {
+                logger.debug("Right-click at x=\(point.x) y=\(point.y) is covered by the frontmost app.")
+                return nil
+            }
 
-        target.axWindow = accessibilityWindow(matching: target, at: point)
-        return target
+            target.axWindow = accessibilityWindow(matching: target, at: point)
+            return target
+
+        case .covered(let ownerName, let layer):
+            logger.debug(
+                """
+                Right-click at x=\(point.x) y=\(point.y) is covered by \
+                \(ownerName ?? "an unfocusable surface", privacy: .public) \
+                on layer \(layer).
+                """
+            )
+            return nil
+
+        case .none:
+            guard let target = accessibilityWindow(at: point) else {
+                return nil
+            }
+
+            guard !frontmostApplicationCovers(point, excluding: target.pid) else {
+                logger.debug("Right-click at x=\(point.x) y=\(point.y) is covered by the frontmost app.")
+                return nil
+            }
+
+            return target
+        }
     }
 
     private func accessibilityWindow(at point: CGPoint) -> TargetWindow? {
@@ -299,29 +325,13 @@ final class RightClickFocusController {
         return value as? [AXUIElement]
     }
 
-    private func graphicsWindow(at point: CGPoint) -> TargetWindow? {
+    private func graphicsWindowHit(at point: CGPoint) -> GraphicsWindowHit {
         let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
         guard let windowInfoList = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else {
-            return nil
+            return .none
         }
 
         for windowInfo in windowInfoList {
-            guard numericValue(kCGWindowLayer, in: windowInfo)?.intValue == 0 else {
-                continue
-            }
-
-            guard let ownerPID = numericValue(kCGWindowOwnerPID, in: windowInfo)?.int32Value else {
-                continue
-            }
-
-            if ownerPID == ProcessInfo.processInfo.processIdentifier {
-                continue
-            }
-
-            guard let windowID = numericValue(kCGWindowNumber, in: windowInfo)?.uint32Value else {
-                continue
-            }
-
             if let alpha = numericValue(kCGWindowAlpha, in: windowInfo), alpha.doubleValue <= 0.05 {
                 continue
             }
@@ -333,19 +343,63 @@ final class RightClickFocusController {
                 continue
             }
 
-            if bounds.contains(point) {
-                return TargetWindow(
-                    pid: ownerPID,
-                    axWindow: nil,
-                    cgWindowID: windowID,
-                    ownerName: windowInfo[kCGWindowOwnerName as String] as? String,
-                    windowName: windowInfo[kCGWindowName as String] as? String,
-                    bounds: bounds
-                )
+            guard bounds.contains(point) else {
+                continue
             }
+
+            let layer = numericValue(kCGWindowLayer, in: windowInfo)?.intValue ?? Int.max
+            let ownerName = windowInfo[kCGWindowOwnerName as String] as? String
+
+            guard let ownerPID = numericValue(kCGWindowOwnerPID, in: windowInfo)?.int32Value else {
+                return .covered(ownerName: ownerName, layer: layer)
+            }
+
+            if ownerPID == ProcessInfo.processInfo.processIdentifier {
+                return .covered(ownerName: ownerName, layer: layer)
+            }
+
+            guard layer == 0 else {
+                return .covered(ownerName: ownerName, layer: layer)
+            }
+
+            guard let windowID = numericValue(kCGWindowNumber, in: windowInfo)?.uint32Value else {
+                return .covered(ownerName: ownerName, layer: layer)
+            }
+
+            return .target(TargetWindow(
+                pid: ownerPID,
+                axWindow: nil,
+                cgWindowID: windowID,
+                ownerName: ownerName,
+                windowName: windowInfo[kCGWindowName as String] as? String,
+                bounds: bounds
+            ))
         }
 
-        return nil
+        return .none
+    }
+
+    private func frontmostApplicationCovers(_ point: CGPoint, excluding targetPID: pid_t) -> Bool {
+        guard let frontmostApplication = NSWorkspace.shared.frontmostApplication else {
+            return false
+        }
+
+        let frontmostPID = frontmostApplication.processIdentifier
+        guard
+            frontmostPID != targetPID,
+            frontmostPID != ProcessInfo.processInfo.processIdentifier
+        else {
+            return false
+        }
+
+        let appElement = AXUIElementCreateApplication(frontmostPID)
+        guard let windows = axElementArrayAttribute(kAXWindowsAttribute, from: appElement) else {
+            return false
+        }
+
+        return windows.contains { window in
+            !isMinimized(window) && frame(of: window)?.contains(point) == true
+        }
     }
 
     private func numericValue(_ key: CFString, in windowInfo: [String: Any]) -> NSNumber? {
@@ -377,6 +431,10 @@ final class RightClickFocusController {
         return CGRect(origin: position, size: size)
     }
 
+    private func isMinimized(_ window: AXUIElement) -> Bool {
+        attribute(kAXMinimizedAttribute, from: window) as? Bool ?? false
+    }
+
     private func frameDistance(from expected: CGRect?, to candidate: CGRect?) -> CGFloat {
         guard let expected, let candidate else { return .greatestFiniteMagnitude }
 
@@ -402,6 +460,12 @@ private struct TargetWindow {
     let ownerName: String?
     let windowName: String?
     let bounds: CGRect?
+}
+
+private enum GraphicsWindowHit {
+    case target(TargetWindow)
+    case covered(ownerName: String?, layer: Int)
+    case none
 }
 
 private let eventTapCallback: CGEventTapCallBack = { _, type, event, userInfo in
