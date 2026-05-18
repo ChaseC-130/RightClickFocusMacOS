@@ -123,11 +123,6 @@ final class RightClickFocusController {
     private func targetWindow(at point: CGPoint) -> TargetWindow? {
         switch graphicsWindowHit(at: point) {
         case .target(var target):
-            guard !frontmostApplicationCovers(point, excluding: target.pid) else {
-                logger.debug("Right-click at x=\(point.x) y=\(point.y) is covered by the frontmost app.")
-                return nil
-            }
-
             target.axWindow = accessibilityWindow(matching: target, at: point)
             return target
 
