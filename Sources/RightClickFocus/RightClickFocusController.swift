@@ -362,6 +362,10 @@ final class RightClickFocusController {
             let layer = numericValue(kCGWindowLayer, in: windowInfo)?.intValue ?? Int.max
             let ownerName = windowInfo[kCGWindowOwnerName as String] as? String
 
+            if isSystemOverlay(ownerName: ownerName) {
+                continue
+            }
+
             guard let ownerPID = numericValue(kCGWindowOwnerPID, in: windowInfo)?.int32Value else {
                 return .covered(ownerName: ownerName, layer: layer)
             }
@@ -416,6 +420,23 @@ final class RightClickFocusController {
 
     private func numericValue(_ key: CFString, in windowInfo: [String: Any]) -> NSNumber? {
         windowInfo[key as String] as? NSNumber
+    }
+
+    private func isSystemOverlay(ownerName: String?) -> Bool {
+        guard let ownerName else { return false }
+        switch ownerName {
+        case "Dock",
+             "WindowServer",
+             "Window Server",
+             "SystemUIServer",
+             "Control Center",
+             "Notification Center",
+             "NotificationCenter",
+             "Wallpaper":
+            return true
+        default:
+            return false
+        }
     }
 
     private func pid(for element: AXUIElement) -> pid_t? {
