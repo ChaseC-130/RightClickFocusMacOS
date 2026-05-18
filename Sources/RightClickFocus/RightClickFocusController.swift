@@ -242,16 +242,21 @@ final class RightClickFocusController {
         app.unhide()
 
         if let axWindow = target.axWindow {
-            focus(axWindow: axWindow, appElement: appElement)
+            AXUIElementSetAttributeValue(
+                axWindow,
+                kAXMinimizedAttribute as CFString,
+                kCFBooleanFalse
+            )
         }
 
+        let carbonActivationResult = activateAsUserInitiated(pid: target.pid)
         let axFrontmostResult = AXUIElementSetAttributeValue(
             appElement,
             kAXFrontmostAttribute as CFString,
             kCFBooleanTrue
         )
-        let carbonActivationResult = activateAsUserInitiated(pid: target.pid)
-        let appActivationResult = app.activate(options: [.activateAllWindows])
+        let appActivationResult = app.activate()
+        launchServicesActivate(app: app)
 
         if let axWindow = target.axWindow {
             focus(axWindow: axWindow, appElement: appElement)
@@ -271,6 +276,18 @@ final class RightClickFocusController {
 
         let targetName = target.ownerName ?? "unknown app"
         lastFocusSummary = targetName
+    }
+
+    private func launchServicesActivate(app: NSRunningApplication) {
+        guard let bundleURL = app.bundleURL else { return }
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        configuration.addsToRecentItems = false
+        NSWorkspace.shared.openApplication(
+            at: bundleURL,
+            configuration: configuration,
+            completionHandler: nil
+        )
     }
 
     private func activateAsUserInitiated(pid: pid_t) -> OSStatus? {
